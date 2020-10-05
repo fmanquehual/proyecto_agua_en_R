@@ -23,7 +23,7 @@ db_red_hidrica <- red_hidrica00@data
 red_hidrica000 <- gDifference(red_hidrica00, red_hidrica_mask, byid=TRUE, id=row.names(db_red_hidrica))
 red_hidrica <- SpatialLinesDataFrame(red_hidrica000, data = db_red_hidrica, match.ID=TRUE)
 
-plot(red_hidrica, axes=TRUE)
+# plot(red_hidrica, axes=TRUE)
 head(red_hidrica@data)
 
 red_hidrica@data$id <- 1:nrow(red_hidrica@data)
@@ -61,13 +61,12 @@ for (i in numero.de.objetos) {
   if(i==1){segmentos.en.bruto <- segmento.i} else(segmentos.en.bruto <- raster::union(segmentos.en.bruto, segmento.i))
 }
 
-plot(red_hidrica, lwd=2, axes=TRUE)
-plot(segmentos.en.bruto, pch = 16, col = 'red', add=TRUE)
+# plot(red_hidrica, lwd=2, axes=TRUE)
+# plot(segmentos.en.bruto, pch = 16, col = 'red', add=TRUE)
 
 segmentos.en.bruto@data$x_y <- paste(segmentos.en.bruto@data$x, segmentos.en.bruto@data$y, sep = '_')
 segmentos.en.bruto@data$id_utilizado <- 0
 
-segmentos.en.bruto@data
 for(j in 1:nrow(segmentos.en.bruto@data)) {
  #j <- 19
 
@@ -94,9 +93,9 @@ for(j in 1:nrow(segmentos.en.bruto@data)) {
   ej2@data <- as.data.frame(ej2@data[1,c('strahler')])
   colnames(ej2@data) <- 'strahler'
   
-  plot(red_hidrica, lwd=2, axes=TRUE)
-  plot(segmentos.en.bruto, pch = 16, col = 'red', add=TRUE)
-  plot(ej2, lwd=2, col='green', add=TRUE)
+  # plot(red_hidrica, lwd=2, axes=TRUE)
+  # plot(segmentos.en.bruto, pch = 16, col = 'red', add=TRUE)
+  # plot(ej2, lwd=2, col='green', add=TRUE)
   
   valores.de.strahler <- unique( as.numeric(ej2@data$strahler) )
 
@@ -140,6 +139,9 @@ for(j in 1:nrow(segmentos.en.bruto@data)) {
        )
 
   }
+  
+  mensaje <- paste('Objeto', j, 'listo de', nrow(segmentos.en.bruto@data), sep = ' ')
+  message(mensaje)
 }
 
 segmento.depurado@data
