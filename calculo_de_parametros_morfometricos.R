@@ -14,6 +14,14 @@ setwd('C:/Users/Usuario/Documents/Francisco/proyecto_agua/')
 cuenca <- readOGR('.', 'VectorCuencaPadreCasas')
 red.hidrica <- readOGR('.', 'VectorRedPadreCasas')
 
+setwd('C:/Users/Usuario/Documents/Francisco/proyecto_agua/coberturas_strahler/')
+curso.de.agua.de.orden.1 <- readOGR('.', 'VectorRedPadreCasas_strahler_orden_1_disuelto')
+curso.de.agua.de.orden.2 <- readOGR('.', 'VectorRedPadreCasas_strahler_orden_2_disuelto')
+curso.de.agua.de.orden.3 <- readOGR('.', 'VectorRedPadreCasas_strahler_orden_3_disuelto')
+curso.de.agua.de.orden.4 <- readOGR('.', 'VectorRedPadreCasas_strahler_orden_4_disuelto')
+curso.de.agua.de.orden.5 <- readOGR('.', 'VectorRedPadreCasas_strahler_orden_5_disuelto')
+curso.de.agua.de.orden.6 <- readOGR('.', 'VectorRedPadreCasas_strahler_orden_6_disuelto')
+  
 setwd('C:/Users/Usuario/Documents/Francisco/proyecto_agua/DEM/')
 dem.09 <- raster('9.jp2')
 
@@ -48,7 +56,7 @@ dem.cuenca <- mask(dem.cuenca0, cuenca.buffer)
 
 plot(dem.cuenca)
 plot(cuenca.buffer, border='red', lwd=2, add=TRUE)
-plot(red.hidrica, lty=2, add=TRUE)
+plot(red.hidrica, lwd=2, add=TRUE)
 
 # fin ---
 
@@ -59,42 +67,91 @@ plot(red.hidrica, lty=2, add=TRUE)
 
 # 1. Orden de drenaje (Strahler) hecho en QGIS
 red.hidrica@data$strahler <- as.numeric(red.hidrica@data$strahler)
-orden.de.drenaje <- unique(red.hidrica@data$strahler) ; orden.de.drenaje
+U <- unique(red.hidrica@data$strahler) ; U
 
 
-# 2. Numero de cursos de agua (FALTA)
+# 2. Numero de cursos de agua
+
+# Proceso hecho en script 'preparacion_de_capas_para_identificar_numero_de_cursos_de_agua_segun_orden_de_strahler':
+# - seleccionar solo a cursos de agua de orden i
+# - buffer (5 m por lado)
+
+# Proceso hecho en QGIS:
+# - ocupar v.dissolve de GRASS, y listo!
+
+N1 <- length(curso.de.agua.de.orden.1)
+N2 <- length(curso.de.agua.de.orden.2)
+N3 <- length(curso.de.agua.de.orden.3)
+N4 <- length(curso.de.agua.de.orden.4)
+N5 <- length(curso.de.agua.de.orden.5)
+N6 <- length(curso.de.agua.de.orden.6)
+
+Nu <- sum(N1, N2, N3, N4, N5, N6)
+Nu
 
 
 # 3. Longitud del curso de agua principal
-orden.maximo <- max(red.hidrica@data$strahler) ; orden.maximo
-
-id.con.orden.maximo <- which(red.hidrica@data$strahler==orden.maximo)
-curso.de.agua.principal <- red.hidrica[id.con.orden.maximo,]
-plot(curso.de.agua.principal, col='green', add=TRUE)
-
-longitud.curso.de.agua.principal <- gLength(curso.de.agua.principal)/1000 ; longitud.curso.de.agua.principal
+L <- gLength(curso.de.agua.de.orden.6)/1000
+L
 
 
 # 4. Longitud de cursos de agua
-longitud.de.cursos.de.agua <- gLength(red.hidrica)/1000 ; longitud.de.cursos.de.agua
+
+L1 <- gLength(curso.de.agua.de.orden.1)/1000
+L2 <- gLength(curso.de.agua.de.orden.2)/1000
+L3 <- gLength(curso.de.agua.de.orden.3)/1000
+L4 <- gLength(curso.de.agua.de.orden.4)/1000
+L5 <- gLength(curso.de.agua.de.orden.5)/1000
+L6 <- gLength(curso.de.agua.de.orden.6)/1000
+
+Lu <- sum(L1, L2, L3, L4, L5, L6)
+Lu
 
 
-# 5. Longitud promedio de cursos (FALTA)
+# 5. Longitud promedio de cursos
+Lm1 <- L1/N1
+Lm2 <- L2/N2
+Lm3 <- L3/N3
+Lm4 <- L4/N4
+Lm5 <- L5/N5
+Lm6 <- L6/N6
+
+Lm <- Lu/Nu
+Lm
 
 
 # 6. Radio de longitud de cursos
-db <- data.frame(strahler=orden.de.drenaje) ; db
+RL2 <- Lm2/Lm1
+RL3 <- Lm3/Lm2
+RL4 <- Lm4/Lm3
+RL5 <- Lm5/Lm4
+RL6 <- Lm6/Lm5
 
-orden.i <- which(red.hidrica@data$strahler==db$strahler[1])
-curso.de.agua.de.orden.i <- red.hidrica[orden.i,]
+RL <- mean(RL2, RL3, RL4, RL5, RL6)
+RL
 
-plot(dem.cuenca)
-plot(red.hidrica, add=TRUE)
-plot(curso.de.agua.de.orden.i, col='green', add=TRUE)
 
-longitud.curso.de.agua.de.orden.i <- gLength(curso.de.agua.de.orden.i)
+# 7. Radio de bifurcacion
+Rb1 <- N1/N2
+Rb2 <- N2/N3
+Rb3 <- N3/N4
+Rb4 <- N4/N5
+Rb5 <- N5/N6
 
-# es lu.i <- longitud.curso.de.agua.de.orden.2/numero.cursos.de.agua.de.orden.2
-# es lu.i-1 <- longitud.curso.de.agua.de.orden.1/numero.cursos.de.agua.de.orden.1
-# Rl <- lu.i/lu.i-1
+Rb <- mean(Rb1, Rb2, Rb3, Rb4, Rb5)
+Rb
+
+
+# 8. Coeficiente Rho
+Rho <- RL/Rb
+Rho
+
 # fin ---
+
+
+
+
+# Calculo parametros Forma de la Cuenca ----
+
+# 9. Longitud
+
