@@ -8,22 +8,30 @@ dev.off()
 
 # Lectura de capas ----
 
-#setwd('C:/Users/Usuario/Documents/Francisco/proyecto_agua/coberturas_para_identificador_de_cursos_de_agua/')
-setwd('C:/Users/Usuario/Documents/Francisco/proyecto_agua/')
-red_hidrica0 <- readOGR('.', 'VectorRedPadreCasas')
+setwd('C:/Users/Usuario/Documents/Francisco/proyecto_agua/coberturas_para_identificador_de_cursos_de_agua/')
+red_hidrica0 <- readOGR('.', 'red_hidrica_2')
+
+# setwd('C:/Users/Usuario/Documents/Francisco/proyecto_agua/')
+# red_hidrica0 <- readOGR('.', 'VectorRedPadreCasas')
 
 id <- which(red_hidrica0@data$strahler!=1)
 red_hidrica_mask <- red_hidrica0[id,]
-red_hidrica_mask <- buffer(red_hidrica_mask, width=10)
+red_hidrica_mask <- buffer(red_hidrica_mask, width=5)
 
 id <- which(red_hidrica0@data$strahler==1)
 red_hidrica00 <- red_hidrica0[id,]
 db_red_hidrica <- red_hidrica00@data
 
-red_hidrica000 <- gDifference(red_hidrica00, red_hidrica_mask, byid=TRUE, id=row.names(db_red_hidrica))
-red_hidrica <- SpatialLinesDataFrame(red_hidrica000, data = db_red_hidrica, match.ID=TRUE)
+# NUEVO
+red_hidrica000 <- gLineMerge(red_hidrica00, byid=FALSE)
+#red_hidrica0000 <- SpatialLinesDataFrame(red_hidrica000, data = db_red_hidrica, match.ID=TRUE)
 
-# plot(red_hidrica, axes=TRUE)
+# FIN 
+
+red_hidrica0000 <- gDifference(red_hidrica000, red_hidrica_mask, byid=TRUE, id=row.names(db_red_hidrica))
+red_hidrica <- SpatialLinesDataFrame(red_hidrica0000, data = db_red_hidrica, match.ID=TRUE)
+
+plot(red_hidrica, axes=TRUE)
 head(red_hidrica@data)
 
 red_hidrica@data$id <- 1:nrow(red_hidrica@data)
@@ -151,7 +159,7 @@ plot(segmento.depurado, lwd=2, col='green', add=TRUE)
 # text(segmentos.en.bruto, segmentos.en.bruto$leyenda.strahler, pos = c(1:4))
 
 setwd('C:/Users/Usuario/Documents/Francisco/proyecto_agua/coberturas_para_identificador_de_cursos_de_agua/')
-writeOGR(segmento.depurado, ".", "segmento_depurado_13", driver="ESRI Shapefile",
+writeOGR(segmento.depurado, ".", "segmento_depurado_14", driver="ESRI Shapefile",
         overwrite_layer = TRUE)
 
 # fin ---
