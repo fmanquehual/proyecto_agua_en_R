@@ -8,6 +8,7 @@ dev.off()
 
 setwd('C:/Users/Usuario/Documents/Francisco/proyecto_agua/proyecto_agua_en_R/')
 source('funcion_pendiente_media_para_curso_de_agua_principal.R')
+source('funcion_db_con_pixeles_identificados_y_ordenados.R')
 
 # Lectura de capas ----
 
@@ -75,7 +76,7 @@ plot(red.hidrica, lwd=2, add=TRUE)
 
 # 1. Orden de drenaje (Strahler) hecho en QGIS
 red.hidrica@data$strahler <- as.numeric(red.hidrica@data$strahler)
-U <- unique(red.hidrica@data$strahler) ; U
+U <- max(red.hidrica@data$strahler) ; U
 
 
 # 2. Numero de cursos de agua
@@ -279,7 +280,13 @@ round(H, 2)
 
 
 # 30. Pendiente media del curso de agua principal
-SL <- pendiente_media_para_curso_de_agua_principal(pendiente.cuenca, red.hidrica, numero_de_pixeles_a_promediar = 4)
+plot(curso.de.agua.de.orden.6)
+pixel.inicial.i <- locator(n=1)
+
+db <- db_con_pixeles_identificados_y_ordenados(pixel.inicial.i, pendiente.cuenca, red.hidrica,
+                                                error_de_distancia_respecto_a_pixel_inicial = 5)
+
+SL <- pendiente_media_para_curso_de_agua_principal(db, numero_de_pixeles_a_promediar = 4)
 round(SL, 2)
 
 
@@ -305,5 +312,16 @@ round(Rn, 2)
 # 35. Indice de diseccion
 Dis <- H/Zmax
 round(Dis, 2)
+
+# fin ---
+
+
+
+
+# Calculo Tiempo de Concentracion ----
+
+# Modelo de William (1922)
+Tc <- (60*Lb*A^0.4)/(D*Sm^0.2)
+round(Tc, 2)
 
 # fin ---
