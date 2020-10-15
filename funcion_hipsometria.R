@@ -56,10 +56,10 @@ hipsometria <- function (x, absolute = TRUE, main = "", col = "blue", AddDen =T,
                                         paste("Error:",round(integral$abs.error,3))),cex=.8)
     } else{
       plot(absolute.area, absolute.elev, main = main, type = "l", col = col, ...)
-      legend("bottomleft", bty = "n", c(paste("Elevación media:",round(zmean,2), "[m.s.n.m]"),
-                                        paste("Elevación máxima:", round(zmax,2), "[m.s.n.m]"),
-                                        paste("Elevación mínima:", round(zmin,2), "[m.s.n.m]"),
-                                        paste("Área:", round(areaCN/1e+6,2),"[km2]"),
+      legend("bottomleft", bty = "n", c(#paste("Elevación media:",round(zmean,2), "[m.s.n.m]"),
+                                        # paste("Elevación máxima:", round(zmax,2), "[m.s.n.m]"),
+                                        # paste("Elevación mínima:", round(zmin,2), "[m.s.n.m]"),
+                                        # paste("Área:", round(areaCN/1e+6,2),"[km2]"),
                                         paste("Integral:",round(integral$value,3)),
                                         paste("Error:",round(integral$abs.error,3))),cex=.8)}
     
@@ -82,19 +82,19 @@ hipsometria <- function (x, absolute = TRUE, main = "", col = "blue", AddDen =T,
       legend("bottomleft", bty = "n", 
              c("Curva hipsométrica", "Función densidad"), 
              lty=c(1,1),col=c(col,colDen),xjust = 1, yjust = 1,cex=0.8)
-      legend("topright", bty = "n", c(paste("Elevación media:",round(zmean,2), "[m.s.n.m]"),
-                                        paste("Elevación máxima:", round(zmax,2), "[m.s.n.m]"),
-                                        paste("Elevación mínima:", round(zmin,2), "[m.s.n.m]"),
-                                        paste("Área:", round(areaCN/1e+6,2),"[km2]"),
+      legend("topright", bty = "n", c(#paste("Elevación media:",round(zmean,2), "[m.s.n.m]"),
+                                        # paste("Elevación máxima:", round(zmax,2), "[m.s.n.m]"),
+                                        # paste("Elevación mínima:", round(zmin,2), "[m.s.n.m]"),
+                                        # paste("Área:", round(areaCN/1e+6,2),"[km2]"),
                                         paste("Integral:",round(integral$value,3)),
                                         paste("Error:",round(integral$abs.error,3))),cex=.8)
       
     } else{
       plot(relative.area, relative.elev, main = main, type = "l", col = col, ...)
-      legend("bottomleft", bty = "n", c(paste("Elevación media:",round(zmean,2), "[m.s.n.m]"),
-                                        paste("Elevación máxima:", round(zmax,2), "[m.s.n.m]"),
-                                        paste("Elevación mínima:", round(zmin,2), "[m.s.n.m]"),
-                                        paste("Área:", round(areaCN/1e+6,2),"[km2]"),
+      legend("bottomleft", bty = "n", c(#paste("Elevación media:",round(zmean,2), "[m.s.n.m]"),
+      #                                   paste("Elevación máxima:", round(zmax,2), "[m.s.n.m]"),
+      #                                   paste("Elevación mínima:", round(zmin,2), "[m.s.n.m]"),
+      #                                   paste("Área:", round(areaCN/1e+6,2),"[km2]"),
                                         paste("Integral:",round(integral$value,3)),
                                         paste("Error:",round(integral$abs.error,3))),cex=.8)}
     
