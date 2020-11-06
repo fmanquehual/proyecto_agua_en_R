@@ -15,8 +15,9 @@ dev.off()
 
 setwd('C:/Users/Usuario/Documents/Francisco/proyecto_agua/ERA_LAND/')
 
-variable <- 'pev' # total precipitation (tp), potential evaporation (pev)
-nombre.archivo <- 'adaptor.mars.internal-1603772847.3626816-2977-32-dd28a542-ac6e-4a60-a62d-111c003c5901.nc'
+variable <- 't2m' # 2m temperature (t2m), total precipitation (tp), potential evaporation (pev)
+# nombre.archivo <- 'adaptor.mars.internal-1603772847.3626816-2977-32-dd28a542-ac6e-4a60-a62d-111c003c5901.nc' # (tp, pev)
+nombre.archivo <- 'adaptor.mars.internal-1603776645.8702145-9028-19-8c2dd33e-218f-4735-8a94-1c57e2e7b114.nc' # (t2m, evavt)
 era5 <- stack(nombre.archivo, varname=variable)
 era5
 
@@ -71,7 +72,8 @@ er5.datos.mensuales0 <- loadGridData(dataset = nombre.archivo,
                                  years = 1981:2020,
                                  time = 'DD')
 
-er5.datos.mensuales <- udConvertGrid(er5.datos.mensuales0, new.units = "mm") # 'mm' para 'tp' y 'pev'
+# er5.datos.mensuales <- udConvertGrid(er5.datos.mensuales0, new.units = "mm") # 'mm' para 'tp' y 'pev'
+er5.datos.mensuales <- udConvertGrid(er5.datos.mensuales0, new.units = "celsius") # 'C' para 't2m'
 
 spatialPlot(climatology(er5.datos.mensuales, list(FUN = mean, na.rm = T)),
             scales = list(draw = T))

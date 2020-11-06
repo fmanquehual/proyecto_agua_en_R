@@ -14,8 +14,8 @@ source('funcion_nombre_de_columnas_a_fechas.R')
 
 setwd('C:/Users/Usuario/Documents/Francisco/proyecto_agua/ERA_LAND/bases_de_datos/')
 
-variable <- 'pev'
-nombre.archivo <- 'pev_puren_era5_land_bruto.csv'
+variable <- 't2m' # 't2m', 'tp', 'pev'
+nombre.archivo <- 't2m_puren_era5_land_bruto.csv'
 db.completo <- read.csv(nombre.archivo)
 head(db.completo)
 
@@ -38,7 +38,7 @@ for (k in 1:nrow(db.completo)) {
   anhos.completos <- c()
   
   for(i in 1:length(anhos.unicos)) {
-      
+    # i <- 1  
     longitud.anho.i <- anhos[anhos==anhos.unicos[i]]
     
     if(length(longitud.anho.i)==12){anhos.completos <- c(anhos.completos, anhos.unicos[i])
@@ -84,7 +84,9 @@ for (k in 1:nrow(db.completo)) {
       'Jun', 'Jul', 'Aug', 'Sep')
     
     colnames(db.anho.hidrologico) <- nombre.meses.anho.hidrologico.hemisferio.norte
-    db.anho.hidrologico <- cbind(db.anho.hidrologico, Annual = rowSums(db.anho.hidrologico))
+    
+    if(variable == 't2m'){ db.anho.hidrologico <- cbind(db.anho.hidrologico, Annual = rowMeans(db.anho.hidrologico))
+      } else( db.anho.hidrologico <- cbind(db.anho.hidrologico, Annual = rowSums(db.anho.hidrologico)) )
     
     anho.1 <- anho.i.2[1]
     anho.2 <- anho.i.2[2]
