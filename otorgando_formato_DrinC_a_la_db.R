@@ -12,10 +12,10 @@ source('funcion_nombre_de_columnas_a_fechas.R')
 
 # Lectura de datos ----
 
-setwd('C:/Users/Usuario/Documents/Francisco/proyecto_agua/ERA_LAND/bases_de_datos/Puren/')
+setwd('C:/Users/Usuario/Documents/Francisco/proyecto_agua/ERA_LAND/bases_de_datos/Padre_Las_Casas/')
 
-variable <- 't2m' # 't2m', 'tp', 'pev'
-nombre.archivo <- 't2m_puren_era5_land_bruto.csv'
+variable <- 'tp' # 't2m', 'tp', 'pev'
+nombre.archivo <- 'tp_Padre_Las_Casas_era5_land_bruto.csv'
 db.completo <- read.csv(nombre.archivo)
 head(db.completo)
 

@@ -13,9 +13,9 @@ dev.off()
 # Definiendo direcciones de carpetas ---- 
 
 numero.de.pixel <- 4
-comuna <- 'puren'
-directorio.principal <- 'C:/Users/Usuario/Documents/Francisco/proyecto_agua/ERA_LAND/bases_de_datos/Puren/'
-carpeta.de.archivos <- paste0(directorio.principal, 'pixel_', numero.de.pixel, '/')
+comuna <- 'Padre_Las_Casas'
+directorio.principal <- 'C:/Users/Usuario/Documents/Francisco/proyecto_agua/ERA_LAND/bases_de_datos/'
+carpeta.de.archivos <- paste0(directorio.principal, comuna, '/', 'pixel_', numero.de.pixel, '/')
 carpeta.de.plots <- paste0(carpeta.de.archivos, 'plots/')
 
 # fin ---
@@ -301,7 +301,6 @@ dev.off()
 
 
 
-
 # RDI mensual ----
 
 setwd(carpeta.de.archivos)
@@ -417,7 +416,7 @@ ggplot(db.rdi.con.pendiente, aes(x=anho, y=valor) ) +
     inherit.aes=FALSE
   ) +
   
-  scale_y_continuous(limits = c(-4, 4), breaks=seq(-4, 4, by=1)) +
+  scale_y_continuous(limits = c(-5, 5), breaks=seq(-5, 5, by=1)) +
   scale_x_continuous(limits = c(1982, 2018), breaks=seq(1982, 2018, by=2)) +
   geom_hline(yintercept=intercepto, linetype="dashed", color = 'black') +
   facet_wrap(~nombre.mes, ncol = 3) +
@@ -575,6 +574,241 @@ ggplot(db.rdi.estaciones, aes(x=anho, y=valor)) +
   scale_y_continuous(limits = c(-4, 4), breaks=seq(-4, 4, by=1)) +
   scale_x_continuous(limits = c(1982, 2018), breaks=seq(1982, 2018, by=2)) +
   geom_hline(yintercept=intercepto, linetype="dashed", color = 'black') +
+  facet_wrap(~estacion, ncol = 1) +
+  theme_bw() +
+  theme(text = element_text(size=14), panel.spacing = unit(1, "lines"),
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+dev.off()
+
+# fin ---
+
+
+
+
+# PET mensual ----
+
+setwd(carpeta.de.archivos)
+
+
+# Lectura de datos
+
+nombre.archivo.parte.1 <- 'PET_'
+nombre.archivo <- paste0(nombre.archivo.parte.1, 'pixel_', numero.de.pixel, nombre.archivo.parte.3)
+
+pet0 <- read.xlsx(nombre.archivo, 1)
+head(pet0)
+dim(pet0)
+str(pet0)
+
+
+# Depuracion db
+
+nombre.de.columnas <- pet0[1,]
+colnames(pet0) <- nombre.de.columnas
+pet <- pet0[-1,-ncol(pet0)]
+
+head(pet)
+str(pet)
+
+nombre.meses <- c('Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 
+                  'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre')
+
+pet.mensual0 <- pet[-c(nrow(pet)-1, nrow(pet)), -c(nrow(pet0)-1, ncol(pet))]
+pet.mensual0
+
+colnames(pet.mensual0)
+nuevo.orden.columnas <- c('Year', 'Jan.', 'Feb.', 'Mar.', 'Apr.', 'May', 'Jun.',
+                          'Jul.', 'Aug.', 'Sep.', 'Oct.', 'Nov.', 'Dec.')
+pet.mensual <- pet.mensual0[,nuevo.orden.columnas]
+colnames(pet.mensual)[2:ncol(pet.mensual)] <- nombre.meses
+head(pet.mensual)
+str(pet.mensual)
+
+pet.mensual[,c(2:ncol(pet.mensual))] <- sapply(pet.mensual[,c(2:ncol(pet.mensual))], as.numeric)
+pet.mensual$Year <- 1982:2018
+
+head(pet.mensual)
+str(pet.mensual)
+
+
+# Calculo Sen's slope
+
+pet.mensual.con.pendiente <- c()
+
+for (i in 1:12) {
+  # i <- 1
+  
+  anho.pet.mensual.i <- pet.mensual[,1]
+  pet.mensual.i <- pet.mensual[,i+1]
+  nombre.mes.i <- nombre.meses[i]
+  
+  spi.ts.i <- ts(pet.mensual.i, start = 1982, freq = 1)
+  
+  slope.i <- sens.slope(spi.ts.i,) ; slope.i
+  valor.pendiente <- round(slope.i$estimates, 3)
+  valor.p.value <- round(slope.i$p.value, 3)
+  
+  leyenda.valor.pendiente.i <- paste0('Pendiente = ', valor.pendiente, 
+                                    ' (', 'p-value = ', valor.p.value, ')')
+  
+  pet.mensual.con.pendiente0 <- data.frame(anho=anho.pet.mensual.i, nombre.mes=nombre.mes.i, 
+                                           valor=pet.mensual.i, 
+                                           leyenda.valor.pendiente=leyenda.valor.pendiente.i)
+  
+  pet.mensual.con.pendiente <- rbind(pet.mensual.con.pendiente, pet.mensual.con.pendiente0)
+}
+
+pet.mensual.con.pendiente$nombre.mes <- factor(pet.mensual.con.pendiente$nombre.mes, levels = nombre.meses)
+head(pet.mensual.con.pendiente)
+
+
+# Plot
+
+setwd(carpeta.de.plots)
+
+nombre.plot <- paste0('PET_mensual', '_pixel_', numero.de.pixel, '.png')
+png(nombre.plot, width = 1080, height = 720, units = "px")
+
+ggplot(pet.mensual.con.pendiente, aes(x=anho, y=valor) ) +
+  geom_point(size=1.5) +
+  # scale_color_manual(values = colores, name='Clasificación') +
+  geom_line() +
+  labs(x = '', y = 'Evapotranspiración Potencial (mm)') +
+  geom_smooth(method = lm, # Recta de regresión
+              se = FALSE, col = 'red') + # Oculta intervalo de confianza
+  geom_text(
+    data    = pet.mensual.con.pendiente,
+    mapping = aes(x = -Inf, y = -Inf, label = leyenda.valor.pendiente),
+    check_overlap = TRUE,
+    hjust   = -0.1,
+    vjust   = -1,
+    inherit.aes=FALSE
+  ) +
+  
+  scale_x_continuous(limits = c(1982, 2019), breaks=seq(1982, 2018, by=2)) +
+  facet_wrap(~nombre.mes, ncol = 3) +
+  theme_bw() +
+  theme(text = element_text(size=14), panel.spacing = unit(1, "lines"),
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+dev.off()
+
+# fin ---
+
+
+
+
+# PET invierno/verano ----
+
+head(pet.mensual)
+str(pet.mensual)
+
+meses.de.invierno <- c(1, 5:10)
+meses.de.verano <- c(1, 11:13, 2:4)
+
+
+# Invierno
+
+pet.invierno <- pet.mensual[,meses.de.invierno]
+colnames(pet.invierno)[1] <- 'anho'
+head(pet.invierno)
+
+pet.invierno$valor.promedio <- rowMeans(pet.invierno[,2:ncol(pet.invierno)])
+
+pet.invierno.sd <- c()
+for (i in 1:nrow(pet.invierno)) {
+  pet.invierno.sd0 <- sd(pet.invierno[i, 2:(ncol(pet.invierno)-1)])  
+  pet.invierno.sd <- c(pet.invierno.sd, pet.invierno.sd0)
+}
+
+pet.invierno$sd <- pet.invierno.sd
+head(pet.invierno)
+
+pet.ts <- ts(pet.invierno$valor.promedio, start = pet.invierno$anho[1], freq = 1)
+
+slope <- sens.slope(pet.ts,) ; slope
+valor.pendiente <- round(slope$estimates, 3)
+valor.p.value <- round(slope$p.value, 3)
+
+pet.invierno$leyenda.valor.pendiente <- paste0(
+  'Pendiente = ', valor.pendiente, ' (', 'p-value = ', valor.p.value, ')')
+
+pet.invierno$estacion <- 'Invierno'
+
+pet.invierno.depurado <- pet.invierno[,c('anho', 'estacion', 'valor.promedio', 'sd', 'leyenda.valor.pendiente')]
+head(pet.invierno.depurado)
+
+
+# Verano
+
+pet.verano <- pet.mensual[,meses.de.verano]
+colnames(pet.verano)[1] <- 'anho'
+head(pet.verano)
+
+pet.verano$valor.promedio <- rowMeans(pet.verano[,2:ncol(pet.verano)])
+
+pet.verano.sd <- c()
+for (i in 1:nrow(pet.verano)) {
+  pet.verano.sd0 <- sd(pet.verano[i, 2:(ncol(pet.verano)-1)])  
+  pet.verano.sd <- c(pet.verano.sd, pet.verano.sd0)
+}
+
+pet.verano$sd <- pet.verano.sd
+head(pet.verano)
+
+pet.ts <- ts(pet.verano$valor.promedio, start = pet.verano$anho[1], freq = 1)
+
+slope <- sens.slope(pet.ts,) ; slope
+valor.pendiente <- round(slope$estimates, 3)
+valor.p.value <- round(slope$p.value, 3)
+
+pet.verano$leyenda.valor.pendiente <- paste0(
+  'Pendiente = ', valor.pendiente, ' (', 'p-value = ', valor.p.value, ')')
+
+pet.verano$estacion <- 'Verano'
+
+pet.verano.depurado <- pet.verano[,c('anho', 'estacion', 'valor.promedio', 'sd', 'leyenda.valor.pendiente')]
+head(pet.verano.depurado)
+
+
+# Union de db's
+
+db.pet.estaciones <- rbind(pet.invierno.depurado, pet.verano.depurado)
+head(db.pet.estaciones)
+
+dim(pet.invierno.depurado)
+dim(pet.verano.depurado)
+dim(db.pet.estaciones)
+
+
+# Plot
+
+setwd(carpeta.de.plots)
+
+nombre.plot <- paste0('PET_invierno_verano', '_pixel_', numero.de.pixel, '.png')
+png(nombre.plot, width = 750, height = 580, units = "px", type = 'cairo')
+
+ggplot(db.pet.estaciones, aes(x=anho, y=valor.promedio)) +
+  geom_point(size=1.5) +
+  geom_line() +
+  
+  geom_errorbar(aes(ymin=valor.promedio-sd, ymax=valor.promedio+sd), width=0.3, size=1,
+                position=position_dodge2(0.05)) +
+  
+  labs(x = '', y = 'SPI') +
+  geom_smooth(method = lm, # Recta de regresión
+              se = FALSE, col = 'red') + # Oculta intervalo de confianza
+  geom_text(
+    data    = db.pet.estaciones,
+    mapping = aes(x = -Inf, y = -Inf, label = leyenda.valor.pendiente),
+    check_overlap = TRUE,
+    hjust   = -0.1,
+    vjust   = -1,
+    inherit.aes=FALSE
+  ) +
+  
+  scale_x_continuous(limits = c(1982, 2018), breaks=seq(1982, 2018, by=2)) +
   facet_wrap(~estacion, ncol = 1) +
   theme_bw() +
   theme(text = element_text(size=14), panel.spacing = unit(1, "lines"),
@@ -852,241 +1086,6 @@ ggplot(db.sdi.estaciones, aes(x=anho, y=valor)) +
   scale_y_continuous(limits = c(-4, 4), breaks=seq(-4, 4, by=1)) +
   scale_x_continuous(limits = c(1982, 2018), breaks=seq(1982, 2018, by=2)) +
   geom_hline(yintercept=intercepto, linetype="dashed", color = 'black') +
-  facet_wrap(~estacion, ncol = 1) +
-  theme_bw() +
-  theme(text = element_text(size=14), panel.spacing = unit(1, "lines"),
-        axis.text.x = element_text(angle = 45, hjust = 1))
-
-dev.off()
-
-# fin ---
-
-
-
-
-# PET mensual ----
-
-setwd(carpeta.de.archivos)
-
-
-# Lectura de datos
-
-nombre.archivo.parte.1 <- 'PET_'
-nombre.archivo <- paste0(nombre.archivo.parte.1, 'pixel_', numero.de.pixel, nombre.archivo.parte.3)
-
-pet0 <- read.xlsx(nombre.archivo, 1)
-head(pet0)
-dim(pet0)
-str(pet0)
-
-
-# Depuracion db
-
-nombre.de.columnas <- pet0[1,]
-colnames(pet0) <- nombre.de.columnas
-pet <- pet0[-1,-ncol(pet0)]
-
-head(pet)
-str(pet)
-
-nombre.meses <- c('Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 
-                  'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre')
-
-pet.mensual0 <- pet[-c(nrow(pet)-1, nrow(pet)), -c(nrow(pet0)-1, ncol(pet))]
-pet.mensual0
-
-colnames(pet.mensual0)
-nuevo.orden.columnas <- c('Year', 'Jan.', 'Feb.', 'Mar.', 'Apr.', 'May', 'Jun.',
-                          'Jul.', 'Aug.', 'Sep.', 'Oct.', 'Nov.', 'Dec.')
-pet.mensual <- pet.mensual0[,nuevo.orden.columnas]
-colnames(pet.mensual)[2:ncol(pet.mensual)] <- nombre.meses
-head(pet.mensual)
-str(pet.mensual)
-
-pet.mensual[,c(2:ncol(pet.mensual))] <- sapply(pet.mensual[,c(2:ncol(pet.mensual))], as.numeric)
-pet.mensual$Year <- 1982:2018
-
-head(pet.mensual)
-str(pet.mensual)
-
-
-# Calculo Sen's slope
-
-pet.mensual.con.pendiente <- c()
-
-for (i in 1:12) {
-  # i <- 1
-  
-  anho.pet.mensual.i <- pet.mensual[,1]
-  pet.mensual.i <- pet.mensual[,i+1]
-  nombre.mes.i <- nombre.meses[i]
-  
-  spi.ts.i <- ts(pet.mensual.i, start = 1982, freq = 1)
-  
-  slope.i <- sens.slope(spi.ts.i,) ; slope.i
-  valor.pendiente <- round(slope.i$estimates, 3)
-  valor.p.value <- round(slope.i$p.value, 3)
-  
-  leyenda.valor.pendiente.i <- paste0('Pendiente = ', valor.pendiente, 
-                                    ' (', 'p-value = ', valor.p.value, ')')
-  
-  pet.mensual.con.pendiente0 <- data.frame(anho=anho.pet.mensual.i, nombre.mes=nombre.mes.i, 
-                                           valor=pet.mensual.i, 
-                                           leyenda.valor.pendiente=leyenda.valor.pendiente.i)
-  
-  pet.mensual.con.pendiente <- rbind(pet.mensual.con.pendiente, pet.mensual.con.pendiente0)
-}
-
-pet.mensual.con.pendiente$nombre.mes <- factor(pet.mensual.con.pendiente$nombre.mes, levels = nombre.meses)
-head(pet.mensual.con.pendiente)
-
-
-# Plot
-
-setwd(carpeta.de.plots)
-
-nombre.plot <- paste0('PET_mensual', '_pixel_', numero.de.pixel, '.png')
-png(nombre.plot, width = 1080, height = 720, units = "px")
-
-ggplot(pet.mensual.con.pendiente, aes(x=anho, y=valor) ) +
-  geom_point(size=1.5) +
-  # scale_color_manual(values = colores, name='Clasificación') +
-  geom_line() +
-  labs(x = '', y = 'Evapotranspiración Potencial (mm)') +
-  geom_smooth(method = lm, # Recta de regresión
-              se = FALSE, col = 'red') + # Oculta intervalo de confianza
-  geom_text(
-    data    = pet.mensual.con.pendiente,
-    mapping = aes(x = -Inf, y = -Inf, label = leyenda.valor.pendiente),
-    check_overlap = TRUE,
-    hjust   = -0.1,
-    vjust   = -1,
-    inherit.aes=FALSE
-  ) +
-  
-  scale_x_continuous(limits = c(1982, 2019), breaks=seq(1982, 2018, by=2)) +
-  facet_wrap(~nombre.mes, ncol = 3) +
-  theme_bw() +
-  theme(text = element_text(size=14), panel.spacing = unit(1, "lines"),
-        axis.text.x = element_text(angle = 45, hjust = 1))
-
-dev.off()
-
-# fin ---
-
-
-
-
-# PET invierno/verano ----
-
-head(pet.mensual)
-str(pet.mensual)
-
-meses.de.invierno <- c(1, 5:10)
-meses.de.verano <- c(1, 11:13, 2:4)
-
-
-# Invierno
-
-pet.invierno <- pet.mensual[,meses.de.invierno]
-colnames(pet.invierno)[1] <- 'anho'
-head(pet.invierno)
-
-pet.invierno$valor.promedio <- rowMeans(pet.invierno[,2:ncol(pet.invierno)])
-
-pet.invierno.sd <- c()
-for (i in 1:nrow(pet.invierno)) {
-  pet.invierno.sd0 <- sd(pet.invierno[i, 2:(ncol(pet.invierno)-1)])  
-  pet.invierno.sd <- c(pet.invierno.sd, pet.invierno.sd0)
-}
-
-pet.invierno$sd <- pet.invierno.sd
-head(pet.invierno)
-
-pet.ts <- ts(pet.invierno$valor.promedio, start = pet.invierno$anho[1], freq = 1)
-
-slope <- sens.slope(pet.ts,) ; slope
-valor.pendiente <- round(slope$estimates, 3)
-valor.p.value <- round(slope$p.value, 3)
-
-pet.invierno$leyenda.valor.pendiente <- paste0(
-  'Pendiente = ', valor.pendiente, ' (', 'p-value = ', valor.p.value, ')')
-
-pet.invierno$estacion <- 'Invierno'
-
-pet.invierno.depurado <- pet.invierno[,c('anho', 'estacion', 'valor.promedio', 'sd', 'leyenda.valor.pendiente')]
-head(pet.invierno.depurado)
-
-
-# Verano
-
-pet.verano <- pet.mensual[,meses.de.verano]
-colnames(pet.verano)[1] <- 'anho'
-head(pet.verano)
-
-pet.verano$valor.promedio <- rowMeans(pet.verano[,2:ncol(pet.verano)])
-
-pet.verano.sd <- c()
-for (i in 1:nrow(pet.verano)) {
-  pet.verano.sd0 <- sd(pet.verano[i, 2:(ncol(pet.verano)-1)])  
-  pet.verano.sd <- c(pet.verano.sd, pet.verano.sd0)
-}
-
-pet.verano$sd <- pet.verano.sd
-head(pet.verano)
-
-pet.ts <- ts(pet.verano$valor.promedio, start = pet.verano$anho[1], freq = 1)
-
-slope <- sens.slope(pet.ts,) ; slope
-valor.pendiente <- round(slope$estimates, 3)
-valor.p.value <- round(slope$p.value, 3)
-
-pet.verano$leyenda.valor.pendiente <- paste0(
-  'Pendiente = ', valor.pendiente, ' (', 'p-value = ', valor.p.value, ')')
-
-pet.verano$estacion <- 'Verano'
-
-pet.verano.depurado <- pet.verano[,c('anho', 'estacion', 'valor.promedio', 'sd', 'leyenda.valor.pendiente')]
-head(pet.verano.depurado)
-
-
-# Union de db's
-
-db.pet.estaciones <- rbind(pet.invierno.depurado, pet.verano.depurado)
-head(db.pet.estaciones)
-
-dim(pet.invierno.depurado)
-dim(pet.verano.depurado)
-dim(db.pet.estaciones)
-
-
-# Plot
-
-setwd(carpeta.de.plots)
-
-nombre.plot <- paste0('PET_invierno_verano', '_pixel_', numero.de.pixel, '.png')
-png(nombre.plot, width = 750, height = 580, units = "px", type = 'cairo')
-
-ggplot(db.pet.estaciones, aes(x=anho, y=valor.promedio)) +
-  geom_point(size=1.5) +
-  geom_line() +
-  
-  geom_errorbar(aes(ymin=valor.promedio-sd, ymax=valor.promedio+sd), width=0.3, size=1,
-                position=position_dodge2(0.05)) +
-  
-  labs(x = '', y = 'SPI') +
-  geom_smooth(method = lm, # Recta de regresión
-              se = FALSE, col = 'red') + # Oculta intervalo de confianza
-  geom_text(
-    data    = db.pet.estaciones,
-    mapping = aes(x = -Inf, y = -Inf, label = leyenda.valor.pendiente),
-    check_overlap = TRUE,
-    hjust   = -0.1,
-    vjust   = -1,
-    inherit.aes=FALSE
-  ) +
-  
-  scale_x_continuous(limits = c(1982, 2018), breaks=seq(1982, 2018, by=2)) +
   facet_wrap(~estacion, ncol = 1) +
   theme_bw() +
   theme(text = element_text(size=14), panel.spacing = unit(1, "lines"),

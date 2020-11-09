@@ -1,6 +1,12 @@
+library(xlsx)
+
 rm(list=ls())
 dev.off()
 
+
+setwd('C:/Users/Usuario/Documents/Francisco/proyecto_DownscaleR')
+source('funcion_incorporacion_de_fechas_perdidas.R')
+source('funcion_fechas_del_anho.R')
 
 
 
@@ -23,8 +29,47 @@ db$dia[id.menores.a.10] <- paste0('0', db$dia[id.menores.a.10])
 
 id.menores.a.10 <- which(db$mes%in%menores.a.10)
 db$mes[id.menores.a.10] <- paste0('0', db$mes[id.menores.a.10])
+db$fecha <- paste(db$agno, db$mes, db$dia, sep = '-')
 
 head(db)
+
+# fin ---
+
+
+
+
+# Incorporando fechas faltantes ----
+
+db.inicio <- data.frame(agno=rango.de.anhos.de.interes[1], mes='01', dia='01', valor=NA)
+db.inicio$fecha <- paste(db.inicio$agno, db.inicio$mes, db.inicio$dia, sep = '-')
+
+db.fin <- data.frame(agno=rango.de.anhos.de.interes[length(rango.de.anhos.de.interes)], 
+                     mes='12', dia='31', valor=NA)
+db.fin$fecha <- paste(db.fin$agno, db.fin$mes, db.fin$dia, sep = '-')
+
+id.fecha.inicio <- which(db$fecha==db.inicio$fecha)
+id.fecha.fin <- which(db$fecha==db.fin$fecha)
+
+if(length(id.fecha.inicio)==0){db <- rbind(db, db.inicio)}
+if(length(id.fecha.fin)==0){db <- rbind(db, db.fin)}
+
+tail(db)
+
+db <- db[,c('fecha', 'agno', 'mes', 'dia', 'valor')]
+db <- incorporacion_de_fechas_perdidas(db)
+db$agno <- year(db$fecha)
+db$mes <- month(db$fecha)
+db$dia <- day(db$fecha)
+
+id.menores.a.10 <- which(db$dia%in%menores.a.10)
+db$dia[id.menores.a.10] <- paste0('0', db$dia[id.menores.a.10])
+
+id.menores.a.10 <- which(db$mes%in%menores.a.10)
+db$mes[id.menores.a.10] <- paste0('0', db$mes[id.menores.a.10])
+db$fecha <- paste(db$agno, db$mes, db$dia, sep = '-')
+
+head(db)
+# View(db)
 
 # fin ---
 
