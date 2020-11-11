@@ -17,7 +17,7 @@ setwd('C:/Users/Usuario/Documents/Francisco/proyecto_agua/ERA_LAND/bases_de_dato
 variable <- 'caudal'
 rango.de.anhos.de.interes <- 1981:2019
 
-nombre.archivo <- 'caudal_diario_Rio_Quepe_en_Quepe.csv'
+nombre.archivo <- 'caudal_diario_Rio_Puren_en_Tranaman.csv'
 db <- read.csv(nombre.archivo)
 head(db)
 dim(db)

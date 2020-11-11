@@ -15,9 +15,9 @@ dev.off()
 
 setwd('C:/Users/Usuario/Documents/Francisco/proyecto_agua/ERA_LAND/')
 
-variable <- 'tp' # 2m temperature (t2m), total precipitation (tp), potential evaporation (pev)
-nombre.archivo <- 'adaptor.mars.internal-1603772847.3626816-2977-32-dd28a542-ac6e-4a60-a62d-111c003c5901.nc' # (tp, pev)
-# nombre.archivo <- 'adaptor.mars.internal-1603776645.8702145-9028-19-8c2dd33e-218f-4735-8a94-1c57e2e7b114.nc' # (t2m, evavt)
+variable <- 't2m' # 2m temperature (t2m), total precipitation (tp), potential evaporation (pev)
+# nombre.archivo <- 'adaptor.mars.internal-1603772847.3626816-2977-32-dd28a542-ac6e-4a60-a62d-111c003c5901.nc' # (tp, pev)
+nombre.archivo <- 'adaptor.mars.internal-1603776645.8702145-9028-19-8c2dd33e-218f-4735-8a94-1c57e2e7b114.nc' # (t2m, evavt)
 era5 <- stack(nombre.archivo, varname=variable)
 era5
 
@@ -30,11 +30,11 @@ plot(era5, 1)
 
 # Lectura capa de cuenca ----
 
-nombre.comuna <- 'Padre_Las_Casas' # 'Imperial' # 'Teodoro_Schmidt' # puren
-# setwd('C:/Users/Usuario/Documents/Francisco/proyecto_agua/coberturas_FFMC/') # 'Imperial' # 'Teodoro_Schmidt' # puren
-setwd('C:/Users/Usuario/Documents/Francisco/proyecto_agua/') # 'Padre_Las_Casas'
+nombre.comuna <- 'Imperial' # 'Padre_Las_Casas' # 'Imperial' # 'Teodoro_Schmidt' # puren
+setwd('C:/Users/Usuario/Documents/Francisco/proyecto_agua/coberturas_FFMC/') # 'Imperial' # 'Teodoro_Schmidt' # puren
+# setwd('C:/Users/Usuario/Documents/Francisco/proyecto_agua/') # 'Padre_Las_Casas'
 
-nombre.archivo.cuenca.puren <- 'VectorCuencaPadreCasas'
+nombre.archivo.cuenca.puren <- 'poligono_cuenca_Estero_Poleco_utm18s'
 cuenca <- readOGR('.', nombre.archivo.cuenca.puren)
 cuenca.wgs84 <- spTransform(cuenca, crs(era5)) 
 
@@ -60,27 +60,33 @@ plot(cuenca.wgs84, border='red', add=TRUE)
 
 setwd('C:/Users/Usuario/Documents/Francisco/proyecto_agua/ERA_LAND/')
 
-latitud <- c(-38.94, -38.75) #; c(-38.74, -38.56) #; c(-39.05, -38.85) # Teodoro Schmidt #; c(-38.1, -38) # puren
-longitud <- c(-72.64, -72.45) #; c(-73.05, -72.86) #; c(-73.05, -72.86) # Teodoro Schmidt #; c(-73.14, -72.95) # puren
+latitud <- c(-38.74, -38.56) # c(-38.94, -38.75) # Padre Las Casas; c(-38.74, -38.56) # Imperial; c(-39.05, -38.85) # Teodoro Schmidt #; c(-38.1, -38) # puren
+longitud <- c(-73.05, -72.86) # c(-72.64, -72.45) # Padre Las Casas; c(-73.05, -72.86) # Imperial; c(-73.05, -72.86) # Teodoro Schmidt #; c(-73.14, -72.95) # puren
 
 # C4R.vocabulary()
 er5.datos.mensuales0 <- loadGridData(dataset = nombre.archivo, 
                                  var = variable,
-                                 aggr.d = 'mean',
-                                 aggr.m = "mean",
+                                 #aggr.d = 'mean',
+                                 #aggr.m = "mean",
                                  lonLim = longitud,
                                  latLim= latitud, 
                                  season= 1:12, 
-                                 years = 1981:2020,
-                                 time = 'DD')
+                                 years = 1981:2020)#,
+                                 #time = 'DD')
 
-er5.datos.mensuales <- udConvertGrid(er5.datos.mensuales0, new.units = "mm") # 'mm' para 'tp' y 'pev'
-# er5.datos.mensuales <- udConvertGrid(er5.datos.mensuales0, new.units = "celsius") # 'C' para 't2m'
+# attr(er5.datos.mensuales0$Variable, "units") <- 'm' # 'evavt'
+# er5.datos.mensuales <- udConvertGrid(er5.datos.mensuales0, new.units = "mm") # 'mm' para 'tp' y 'evavt'
+er5.datos.mensuales <- udConvertGrid(er5.datos.mensuales0, new.units = "celsius") # 'C' para 't2m'
 
-spatialPlot(climatology(er5.datos.mensuales, list(FUN = mean, na.rm = T)),
+spatialPlot(climatology(er5.datos.mensuales0, list(FUN = mean, na.rm = T)),
             scales = list(draw = T))
 
 raster.er5.datos.mensuales <- grid2sp(er5.datos.mensuales)
+
+# stack.i <- stack(raster.er5.datos.mensuales)
+# setwd('C:/Users/Usuario/Documents/Francisco/proyecto_agua/ERA_LAND/capas_para_mapas/')
+# writeRaster(stack.i[[1]], filename="t2m_imperial.tif", format="GTiff", overwrite=TRUE)
+
 plot(raster.er5.datos.mensuales)
 
 # fin ---

@@ -12,11 +12,14 @@ dev.off()
 
 # Definiendo direcciones de carpetas ---- 
 
-numero.de.pixel <- 4
-comuna <- 'Padre_Las_Casas'
-directorio.principal <- 'C:/Users/Usuario/Documents/Francisco/proyecto_agua/ERA_LAND/bases_de_datos/'
-carpeta.de.archivos <- paste0(directorio.principal, comuna, '/', 'pixel_', numero.de.pixel, '/')
-carpeta.de.plots <- paste0(carpeta.de.archivos, 'plots/')
+# numero.de.pixel <- 1
+comuna <- 'Imperial'
+directorio.principal <- 'C:/Users/Usuario/Documents/Francisco/proyecto_agua/CR2/base_de_datos/'
+# carpeta.de.archivos <- paste0(directorio.principal, comuna, '/', 'pixel_', numero.de.pixel, '/')
+# carpeta.de.plots <- paste0(carpeta.de.archivos, 'plots/')
+
+carpeta.de.archivos <- paste0(directorio.principal, comuna, '/indices') # nuevo
+carpeta.de.plots <- paste0(directorio.principal, comuna, '/plots/') # nuevo
 
 # fin ---
 
@@ -30,11 +33,13 @@ setwd(carpeta.de.archivos)
 # Lectura de datos
 
 nombre.archivo.parte.1 <- 'SPI_'
-nombre.archivo.parte.2 <- '_mensual_pixel_'
-nombre.archivo.parte.3 <- '.xlsx'
-nombre.archivo <- paste0(nombre.archivo.parte.1, comuna, nombre.archivo.parte.2, numero.de.pixel, nombre.archivo.parte.3)
-  
+# nombre.archivo.parte.2 <- '_mensual_pixel_'
+# nombre.archivo.parte.3 <- '.xlsx'
+# nombre.archivo <- paste0(nombre.archivo.parte.1, comuna, nombre.archivo.parte.2, numero.de.pixel, nombre.archivo.parte.3)
+nombre.archivo <- list.files(patter=nombre.archivo.parte.1)
+
 db.spi0 <- read.xlsx(nombre.archivo, 1)
+
 head(db.spi0)
 dim(db.spi0)
 str(db.spi0)
@@ -72,7 +77,6 @@ id.anhos.a.descartar <- which(as.numeric(table(db.spi00$anho)) != 12)
 anhos.a.descartar <- as.numeric(names(table(db.spi00$anho)))[id.anhos.a.descartar]
 filas.a.conservar <- which(!db.spi00$anho%in%anhos.a.descartar)
 db.spi <- db.spi00[filas.a.conservar,]
-
 head(db.spi)
 
 
@@ -89,7 +93,7 @@ for (i in 1:12) {
   db.spi.i <- subset(db.spi, mes==i)
   db.spi.i$nombre.mes <- nombre.meses[i]
   
-  spi.ts.i <- ts(db.spi.i$valor, start = 1982, freq = 1)
+  spi.ts.i <- ts(db.spi.i$valor, start = 1980, freq = 1)
   
   slope.i <- sens.slope(spi.ts.i,) ; slope.i
   valor.pendiente <- round(slope.i$estimates, 3)
@@ -112,7 +116,7 @@ colores <- c('#001F93', '#0087FF', '#01DBFE', '#00FF42', '#B9FF00', '#F8F402', '
 
 setwd(carpeta.de.plots)
 
-nombre.plot <- paste0('SPI_mensual', '_pixel_', numero.de.pixel, '.png')
+nombre.plot <- paste0('SPI_mensual', '.png')
 png(nombre.plot, width = 1080, height = 720, units = "px")
 
 ggplot(db.spi.con.pendiente, aes(x=anho, y=valor) ) +
@@ -132,7 +136,7 @@ ggplot(db.spi.con.pendiente, aes(x=anho, y=valor) ) +
   ) +
   
   scale_y_continuous(limits = c(-4, 4), breaks=seq(-4, 4, by=1)) +
-  scale_x_continuous(limits = c(1982, 2018), breaks=seq(1982, 2018, by=2)) +
+  scale_x_continuous(limits = c(1980, 2017), breaks=seq(1980, 2017, by=2)) +
   geom_hline(yintercept=intercepto, linetype="dashed", color = 'black') +
   facet_wrap(~nombre.mes, ncol = 3) +
   theme_bw() +
@@ -146,12 +150,88 @@ dev.off()
 
 
 
-# SPI invierno/verano ----
+# SPI estaciones ----
 
 head(db.spi)
 
-meses.de.invierno <- c(4:9)
-meses.de.verano <- c(10:12, 1:3)
+meses.de.verano <- 1:3
+meses.de.otonho <- 4:6
+meses.de.invierno <- 7:9
+meses.de.primavera <- 10:12
+
+
+# Verano
+
+id.verano <- which(db.spi$mes%in%meses.de.verano)
+db.spi.verano <- db.spi[id.verano,]
+anhos.unicos.verano <- unique(db.spi.verano$anho)
+
+db.spi.verano.con.pendiente <- c()
+for (i in 1:(length(anhos.unicos.verano)-2) ) {
+  # i <- 1
+  
+  anho.i <- anhos.unicos.verano[c(i, i+1)]
+  db.spi.i <- db.spi.verano[db.spi.verano$anho%in%anho.i,]
+  
+  if(nrow(db.spi.i) > 6 & nrow(db.spi.i) < 12){db.spi.i <- db.spi.i[-c(7:nrow(db.spi.i)),]
+  } else if(nrow(db.spi.i) == 12){db.spi.i <- db.spi.i[4:9,]}
+  
+  valor.promedio <- mean(db.spi.i$valor)
+  sd <- sd(db.spi.i$valor)
+  
+  db.spi.mean.i <- data.frame(anho=anho.i[2], valor=valor.promedio, sd=sd)
+  
+  db.spi.verano.con.pendiente <- rbind(db.spi.verano.con.pendiente, db.spi.mean.i)
+}
+
+spi.ts.i <- ts(db.spi.verano.con.pendiente$valor, start = anhos.unicos.verano[2], freq = 1)
+
+slope.i <- sens.slope(spi.ts.i,) ; slope.i
+valor.pendiente <- round(slope.i$estimates, 3)
+valor.p.value <- round(slope.i$p.value, 3)
+
+db.spi.verano.con.pendiente$leyenda.valor.pendiente <- paste0(
+  'Pendiente = ', valor.pendiente, ' (', 'p-value = ', valor.p.value, ')')
+
+db.spi.verano.con.pendiente$estacion <- 'Verano'
+db.spi.verano.con.pendiente
+
+
+# Otono
+
+id.otonho <- which(db.spi$mes%in%meses.de.otonho)
+db.spi.otonho <- db.spi[id.otonho,]
+anhos.unicos.otonho <- unique(db.spi.otonho$anho)
+
+db.spi.otonho.con.pendiente <- c()
+for (i in 1:(length(anhos.unicos.otonho)-2) ) {
+  # i <- 1
+  
+  anho.i <- anhos.unicos.otonho[c(i, i+1)]
+  db.spi.i <- db.spi.otonho[db.spi.otonho$anho%in%anho.i,]
+  
+  if(nrow(db.spi.i) > 6 & nrow(db.spi.i) < 12){db.spi.i <- db.spi.i[-c(7:nrow(db.spi.i)),]
+  } else if(nrow(db.spi.i) == 12){db.spi.i <- db.spi.i[4:9,]}
+  
+  valor.promedio <- mean(db.spi.i$valor)
+  sd <- sd(db.spi.i$valor)
+  
+  db.spi.mean.i <- data.frame(anho=anho.i[2], valor=valor.promedio, sd=sd)
+  
+  db.spi.otonho.con.pendiente <- rbind(db.spi.otonho.con.pendiente, db.spi.mean.i)
+}
+
+spi.ts.i <- ts(db.spi.otonho.con.pendiente$valor, start = anhos.unicos.otonho[2], freq = 1)
+
+slope.i <- sens.slope(spi.ts.i,) ; slope.i
+valor.pendiente <- round(slope.i$estimates, 3)
+valor.p.value <- round(slope.i$p.value, 3)
+
+db.spi.otonho.con.pendiente$leyenda.valor.pendiente <- paste0(
+  'Pendiente = ', valor.pendiente, ' (', 'p-value = ', valor.p.value, ')')
+
+db.spi.otonho.con.pendiente$estacion <- 'Otono'
+db.spi.otonho.con.pendiente
 
 
 # Invierno
@@ -188,18 +268,18 @@ db.spi.invierno.con.pendiente$estacion <- 'Invierno'
 db.spi.invierno.con.pendiente
 
 
-# Verano
+# Primavera
 
-id.verano <- which(db.spi00$mes%in%meses.de.verano)
-db.spi.verano <- db.spi00[id.verano,]
-anhos.unicos.verano <- unique(db.spi.verano$anho)
+id.primavera <- which(db.spi$mes%in%meses.de.primavera)
+db.spi.primavera <- db.spi[id.primavera,]
+anhos.unicos.primavera <- unique(db.spi.primavera$anho)
 
-db.spi.verano.con.pendiente <- c()
-for (i in 1:(length(anhos.unicos.verano)-2) ) {
-  # i <- length(anhos.unicos.verano)
+db.spi.primavera.con.pendiente <- c()
+for (i in 1:(length(anhos.unicos.primavera)-2) ) {
+  # i <- length(anhos.unicos.primavera)
   
-  anho.i <- anhos.unicos.verano[c(i, i+1)]
-  db.spi.i <- db.spi.verano[db.spi.verano$anho%in%anho.i,]
+  anho.i <- anhos.unicos.primavera[c(i, i+1)]
+  db.spi.i <- db.spi.primavera[db.spi.primavera$anho%in%anho.i,]
   
   if(nrow(db.spi.i) > 6 & nrow(db.spi.i) < 12){db.spi.i <- db.spi.i[-c(7:nrow(db.spi.i)),]
     } else if(nrow(db.spi.i) == 12){db.spi.i <- db.spi.i[4:9,]}
@@ -209,29 +289,31 @@ for (i in 1:(length(anhos.unicos.verano)-2) ) {
   
   db.spi.mean.i <- data.frame(anho=anho.i[2], valor=valor.promedio, sd=sd)
   
-  db.spi.verano.con.pendiente <- rbind(db.spi.verano.con.pendiente, db.spi.mean.i)
+  db.spi.primavera.con.pendiente <- rbind(db.spi.primavera.con.pendiente, db.spi.mean.i)
 }
 
-spi.ts.i <- ts(db.spi.verano.con.pendiente$valor, start = anhos.unicos.verano[2], freq = 1)
+spi.ts.i <- ts(db.spi.primavera.con.pendiente$valor, start = anhos.unicos.primavera[2], freq = 1)
 
 slope.i <- sens.slope(spi.ts.i,) ; slope.i
 valor.pendiente <- round(slope.i$estimates, 3)
 valor.p.value <- round(slope.i$p.value, 3)
 
-db.spi.verano.con.pendiente$leyenda.valor.pendiente <- paste0(
+db.spi.primavera.con.pendiente$leyenda.valor.pendiente <- paste0(
   'Pendiente = ', valor.pendiente, ' (', 'p-value = ', valor.p.value, ')')
 
-db.spi.verano.con.pendiente$estacion <- 'Verano'
-db.spi.verano.con.pendiente
+db.spi.primavera.con.pendiente$estacion <- 'Primavera'
+db.spi.primavera.con.pendiente
 
 
 # Union de db's
 
-db.spi.estaciones <- rbind(db.spi.invierno.con.pendiente, db.spi.verano.con.pendiente)
+db.spi.estaciones <- rbind(db.spi.verano.con.pendiente, db.spi.otonho.con.pendiente, 
+                           db.spi.invierno.con.pendiente, db.spi.primavera.con.pendiente)
 head(db.spi.estaciones)
-
-dim(db.spi.invierno.con.pendiente)
 dim(db.spi.verano.con.pendiente)
+dim(db.spi.otonho.con.pendiente)
+dim(db.spi.invierno.con.pendiente)
+dim(db.spi.primavera.con.pendiente)
 dim(db.spi.estaciones)
 
 db.spi.estaciones$clasificacion <- NA
@@ -257,23 +339,24 @@ db.spi.estaciones$clasificacion[db.spi.estaciones$valor <= -2] <- 'Extremadament
 db.spi.estaciones$color[db.spi.estaciones$valor <= -2] <- '#CA0F00'
 
 db.spi.estaciones$clasificacion <- factor(db.spi.estaciones$clasificacion, levels = niveles)
+db.spi.estaciones$estacion <- factor(db.spi.estaciones$estacion, levels = c('Verano', 'Otono', 'Invierno', 'Primavera'))
 db.spi.estaciones <- db.spi.estaciones[order(db.spi.estaciones$clasificacion),]
 
 # Plot
 
 setwd(carpeta.de.plots)
 
-nombre.plot <- paste0('SPI_invierno_verano', '_pixel_', numero.de.pixel, '.png')
+nombre.plot <- paste0('SPI_estaciones', '.png')
 png(nombre.plot, width = 750, height = 580, units = "px", type = 'cairo')
 
 ggplot(db.spi.estaciones, aes(x=anho, y=valor)) +
-  geom_point(aes(colour=clasificacion), size=3) +
   scale_color_manual(values = unique(db.spi.estaciones$color), name='Clasificación', aesthetics = "colour") +
   geom_line() +
 
-  geom_errorbar(aes(ymin=valor-sd, ymax=valor+sd, colour=clasificacion), width=0.6, size=1,
+  geom_errorbar(aes(ymin=valor-sd, ymax=valor+sd), width=0.5, size=0.5,
                 position=position_dodge2(0.05)) +
-
+  geom_point(aes(colour=clasificacion), size=3) +
+  
   labs(x = '', y = 'SPI') +
   geom_smooth(method = lm, # Recta de regresión
               se = FALSE, col = 'red') + # Oculta intervalo de confianza
@@ -287,9 +370,9 @@ ggplot(db.spi.estaciones, aes(x=anho, y=valor)) +
   ) +
   
   scale_y_continuous(limits = c(-4, 4), breaks=seq(-4, 4, by=1)) +
-  scale_x_continuous(limits = c(1982, 2018), breaks=seq(1982, 2018, by=2)) +
+  scale_x_continuous(limits = c(1980, 2018), breaks=seq(1980, 2018, by=2)) +
   geom_hline(yintercept=intercepto, linetype="dashed", color = 'black') +
-  facet_wrap(~estacion, ncol = 1) +
+  facet_wrap(~estacion, ncol = 2) +
   theme_bw() +
   theme(text = element_text(size=14), panel.spacing = unit(1, "lines"),
         axis.text.x = element_text(angle = 45, hjust = 1))
@@ -309,7 +392,7 @@ setwd(carpeta.de.archivos)
 # Lectura de datos
 
 nombre.archivo.parte.1 <- 'RDI_'
-nombre.archivo <- paste0(nombre.archivo.parte.1, comuna, nombre.archivo.parte.2, numero.de.pixel, nombre.archivo.parte.3)
+nombre.archivo <- list.files(patter=nombre.archivo.parte.1)
 
 db.rdi0 <- read.xlsx(nombre.archivo, 1)
 head(db.rdi0)
@@ -371,7 +454,7 @@ for (i in 1:12) {
   
   id.valores.sin.NA <- which(!is.na(db.rdi.i$valor))
   valor <- db.rdi.i$valor[id.valores.sin.NA]
-  rdi.ts.i <- ts(valor, start = 1982, freq = 1)
+  rdi.ts.i <- ts(valor, start = 1980, freq = 1)
   
   slope.i <- sens.slope(rdi.ts.i,) ; slope.i
   valor.pendiente <- round(slope.i$estimates, 3)
@@ -397,7 +480,7 @@ colores <- c('#001F93', '#0087FF', '#01DBFE', '#00FF42', '#B9FF00', '#F8F402', '
 
 setwd(carpeta.de.plots)
 
-nombre.plot <- paste0('RDI_estandarizado_mensual', '_pixel_', numero.de.pixel, '.png')
+nombre.plot <- paste0('RDI_estandarizado_mensual', '.png')
 png(nombre.plot, width = 1080, height = 720, units = "px")
 
 ggplot(db.rdi.con.pendiente, aes(x=anho, y=valor) ) +
@@ -417,7 +500,7 @@ ggplot(db.rdi.con.pendiente, aes(x=anho, y=valor) ) +
   ) +
   
   scale_y_continuous(limits = c(-5, 5), breaks=seq(-5, 5, by=1)) +
-  scale_x_continuous(limits = c(1982, 2018), breaks=seq(1982, 2018, by=2)) +
+  scale_x_continuous(limits = c(1980, 2018), breaks=seq(1980, 2018, by=2)) +
   geom_hline(yintercept=intercepto, linetype="dashed", color = 'black') +
   facet_wrap(~nombre.mes, ncol = 3) +
   theme_bw() +
@@ -431,12 +514,88 @@ dev.off()
 
 
 
-# RDI invierno/verano ----
+# RDI estaciones ----
 
 head(db.rdi)
 
-meses.de.invierno <- c(4:9)
-meses.de.verano <- c(10:12, 1:3)
+meses.de.verano <- 1:3
+meses.de.otonho <- 4:6
+meses.de.invierno <- 7:9
+meses.de.primavera <- 10:12
+
+
+# Verano
+
+id.verano <- which(db.rdi$mes%in%meses.de.verano)
+db.rdi.verano <- db.rdi[id.verano,]
+anhos.unicos.verano <- unique(db.rdi.verano$anho)
+
+db.rdi.verano.con.pendiente <- c()
+for (i in 1:(length(anhos.unicos.verano)-2) ) {
+  # i <- 1
+  
+  anho.i <- anhos.unicos.verano[c(i, i+1)]
+  db.rdi.i <- db.rdi.verano[db.rdi.verano$anho%in%anho.i,]
+  
+  if(nrow(db.rdi.i) > 6 & nrow(db.rdi.i) < 12){db.rdi.i <- db.rdi.i[-c(7:nrow(db.rdi.i)),]
+  } else if(nrow(db.rdi.i) == 12){db.rdi.i <- db.rdi.i[4:9,]}
+  
+  valor.promedio <- mean(db.rdi.i$valor)
+  sd <- sd(db.rdi.i$valor)
+  
+  db.rdi.mean.i <- data.frame(anho=anho.i[2], valor=valor.promedio, sd=sd)
+  
+  db.rdi.verano.con.pendiente <- rbind(db.rdi.verano.con.pendiente, db.rdi.mean.i)
+}
+
+rdi.ts.i <- ts(db.rdi.verano.con.pendiente$valor, start = anhos.unicos.verano[2], freq = 1)
+
+slope.i <- sens.slope(rdi.ts.i,) ; slope.i
+valor.pendiente <- round(slope.i$estimates, 3)
+valor.p.value <- round(slope.i$p.value, 3)
+
+db.rdi.verano.con.pendiente$leyenda.valor.pendiente <- paste0(
+  'Pendiente = ', valor.pendiente, ' (', 'p-value = ', valor.p.value, ')')
+
+db.rdi.verano.con.pendiente$estacion <- 'Verano'
+db.rdi.verano.con.pendiente
+
+
+# Otono
+
+id.otonho <- which(db.rdi$mes%in%meses.de.otonho)
+db.rdi.otonho <- db.rdi[id.otonho,]
+anhos.unicos.otonho <- unique(db.rdi.otonho$anho)
+
+db.rdi.otonho.con.pendiente <- c()
+for (i in 1:(length(anhos.unicos.otonho)-2) ) {
+  # i <- 1
+  
+  anho.i <- anhos.unicos.otonho[c(i, i+1)]
+  db.rdi.i <- db.rdi.otonho[db.rdi.otonho$anho%in%anho.i,]
+  
+  if(nrow(db.rdi.i) > 6 & nrow(db.rdi.i) < 12){db.rdi.i <- db.rdi.i[-c(7:nrow(db.rdi.i)),]
+  } else if(nrow(db.rdi.i) == 12){db.rdi.i <- db.rdi.i[4:9,]}
+  
+  valor.promedio <- mean(db.rdi.i$valor)
+  sd <- sd(db.rdi.i$valor)
+  
+  db.rdi.mean.i <- data.frame(anho=anho.i[2], valor=valor.promedio, sd=sd)
+  
+  db.rdi.otonho.con.pendiente <- rbind(db.rdi.otonho.con.pendiente, db.rdi.mean.i)
+}
+
+rdi.ts.i <- ts(db.rdi.otonho.con.pendiente$valor, start = anhos.unicos.otonho[2], freq = 1)
+
+slope.i <- sens.slope(rdi.ts.i,) ; slope.i
+valor.pendiente <- round(slope.i$estimates, 3)
+valor.p.value <- round(slope.i$p.value, 3)
+
+db.rdi.otonho.con.pendiente$leyenda.valor.pendiente <- paste0(
+  'Pendiente = ', valor.pendiente, ' (', 'p-value = ', valor.p.value, ')')
+
+db.rdi.otonho.con.pendiente$estacion <- 'Otono'
+db.rdi.otonho.con.pendiente
 
 
 # Invierno
@@ -473,18 +632,18 @@ db.rdi.invierno.con.pendiente$estacion <- 'Invierno'
 db.rdi.invierno.con.pendiente
 
 
-# Verano
+# Primavera
 
-id.verano <- which(db.rdi00$mes%in%meses.de.verano)
-db.rdi.verano <- db.rdi00[id.verano,]
-anhos.unicos.verano <- unique(db.rdi.verano$anho)
+id.primavera <- which(db.rdi$mes%in%meses.de.primavera)
+db.rdi.primavera <- db.rdi[id.primavera,]
+anhos.unicos.primavera <- unique(db.rdi.primavera$anho)
 
-db.rdi.verano.con.pendiente <- c()
-for (i in 1:(length(anhos.unicos.verano)-2) ) {
-  # i <- length(anhos.unicos.verano)
+db.rdi.primavera.con.pendiente <- c()
+for (i in 1:(length(anhos.unicos.primavera)-2) ) {
+  # i <- length(anhos.unicos.primavera)
   
-  anho.i <- anhos.unicos.verano[c(i, i+1)]
-  db.rdi.i <- db.rdi.verano[db.rdi.verano$anho%in%anho.i,]
+  anho.i <- anhos.unicos.primavera[c(i, i+1)]
+  db.rdi.i <- db.rdi.primavera[db.rdi.primavera$anho%in%anho.i,]
   
   if(nrow(db.rdi.i) > 6 & nrow(db.rdi.i) < 12){db.rdi.i <- db.rdi.i[-c(7:nrow(db.rdi.i)),]
   } else if(nrow(db.rdi.i) == 12){db.rdi.i <- db.rdi.i[4:9,]}
@@ -494,29 +653,31 @@ for (i in 1:(length(anhos.unicos.verano)-2) ) {
   
   db.rdi.mean.i <- data.frame(anho=anho.i[2], valor=valor.promedio, sd=sd)
   
-  db.rdi.verano.con.pendiente <- rbind(db.rdi.verano.con.pendiente, db.rdi.mean.i)
+  db.rdi.primavera.con.pendiente <- rbind(db.rdi.primavera.con.pendiente, db.rdi.mean.i)
 }
 
-rdi.ts.i <- ts(db.rdi.verano.con.pendiente$valor, start = anhos.unicos.verano[2], freq = 1)
+rdi.ts.i <- ts(db.rdi.primavera.con.pendiente$valor, start = anhos.unicos.primavera[2], freq = 1)
 
 slope.i <- sens.slope(rdi.ts.i,) ; slope.i
 valor.pendiente <- round(slope.i$estimates, 3)
 valor.p.value <- round(slope.i$p.value, 3)
 
-db.rdi.verano.con.pendiente$leyenda.valor.pendiente <- paste0(
+db.rdi.primavera.con.pendiente$leyenda.valor.pendiente <- paste0(
   'Pendiente = ', valor.pendiente, ' (', 'p-value = ', valor.p.value, ')')
 
-db.rdi.verano.con.pendiente$estacion <- 'Verano'
-db.rdi.verano.con.pendiente
+db.rdi.primavera.con.pendiente$estacion <- 'Primavera'
+db.rdi.primavera.con.pendiente
 
 
 # Union de db's
 
-db.rdi.estaciones <- rbind(db.rdi.invierno.con.pendiente, db.rdi.verano.con.pendiente)
+db.rdi.estaciones <- rbind(db.rdi.verano.con.pendiente, db.rdi.otonho.con.pendiente, 
+                           db.rdi.invierno.con.pendiente, db.rdi.primavera.con.pendiente)
 head(db.rdi.estaciones)
-
-dim(db.rdi.invierno.con.pendiente)
 dim(db.rdi.verano.con.pendiente)
+dim(db.rdi.otonho.con.pendiente)
+dim(db.rdi.invierno.con.pendiente)
+dim(db.rdi.primavera.con.pendiente)
 dim(db.rdi.estaciones)
 
 db.rdi.estaciones$clasificacion <- NA
@@ -542,23 +703,22 @@ db.rdi.estaciones$clasificacion[db.rdi.estaciones$valor <= -2] <- 'Extremadament
 db.rdi.estaciones$color[db.rdi.estaciones$valor <= -2] <- '#CA0F00'
 
 db.rdi.estaciones$clasificacion <- factor(db.rdi.estaciones$clasificacion, levels = niveles)
+db.rdi.estaciones$estacion <- factor(db.rdi.estaciones$estacion, levels = c('Verano', 'Otono', 'Invierno', 'Primavera'))
 db.rdi.estaciones <- db.rdi.estaciones[order(db.rdi.estaciones$clasificacion),]
 
 # Plot
 
 setwd(carpeta.de.plots)
 
-nombre.plot <- paste0('RDI_estandarizado_invierno_verano', '_pixel_', numero.de.pixel, '.png')
+nombre.plot <- paste0('RDI_estandarizado_estaciones', '.png')
 png(nombre.plot, width = 750, height = 580, units = "px", type = 'cairo')
 
 ggplot(db.rdi.estaciones, aes(x=anho, y=valor)) +
-  geom_point(aes(colour=clasificacion), size=3) +
   scale_color_manual(values = unique(db.rdi.estaciones$color), name='Clasificación', aesthetics = "colour") +
   geom_line() +
-  
-  geom_errorbar(aes(ymin=valor-sd, ymax=valor+sd, colour=clasificacion), width=0.6, size=1,
+  geom_errorbar(aes(ymin=valor-sd, ymax=valor+sd), width=0.5, size=0.5,
                 position=position_dodge2(0.05)) +
-  
+  geom_point(aes(colour=clasificacion), size=3) +
   labs(x = '', y = 'RDI Estandarizado') +
   geom_smooth(method = lm, # Recta de regresión
               se = FALSE, col = 'red') + # Oculta intervalo de confianza
@@ -572,12 +732,13 @@ ggplot(db.rdi.estaciones, aes(x=anho, y=valor)) +
   ) +
   
   scale_y_continuous(limits = c(-4, 4), breaks=seq(-4, 4, by=1)) +
-  scale_x_continuous(limits = c(1982, 2018), breaks=seq(1982, 2018, by=2)) +
+  scale_x_continuous(limits = c(1980, 2017), breaks=seq(1980, 2017, by=2)) +
   geom_hline(yintercept=intercepto, linetype="dashed", color = 'black') +
-  facet_wrap(~estacion, ncol = 1) +
+  facet_wrap(~estacion, ncol = 2) +
   theme_bw() +
   theme(text = element_text(size=14), panel.spacing = unit(1, "lines"),
         axis.text.x = element_text(angle = 45, hjust = 1))
+
 
 dev.off()
 
@@ -594,7 +755,7 @@ setwd(carpeta.de.archivos)
 # Lectura de datos
 
 nombre.archivo.parte.1 <- 'PET_'
-nombre.archivo <- paste0(nombre.archivo.parte.1, 'pixel_', numero.de.pixel, nombre.archivo.parte.3)
+nombre.archivo <- list.files(pattern = nombre.archivo.parte.1)
 
 pet0 <- read.xlsx(nombre.archivo, 1)
 head(pet0)
@@ -626,7 +787,7 @@ head(pet.mensual)
 str(pet.mensual)
 
 pet.mensual[,c(2:ncol(pet.mensual))] <- sapply(pet.mensual[,c(2:ncol(pet.mensual))], as.numeric)
-pet.mensual$Year <- 1982:2018
+pet.mensual$Year <- 1980:2017
 
 head(pet.mensual)
 str(pet.mensual)
@@ -643,7 +804,7 @@ for (i in 1:12) {
   pet.mensual.i <- pet.mensual[,i+1]
   nombre.mes.i <- nombre.meses[i]
   
-  spi.ts.i <- ts(pet.mensual.i, start = 1982, freq = 1)
+  spi.ts.i <- ts(pet.mensual.i, start = 1980, freq = 1)
   
   slope.i <- sens.slope(spi.ts.i,) ; slope.i
   valor.pendiente <- round(slope.i$estimates, 3)
@@ -667,7 +828,7 @@ head(pet.mensual.con.pendiente)
 
 setwd(carpeta.de.plots)
 
-nombre.plot <- paste0('PET_mensual', '_pixel_', numero.de.pixel, '.png')
+nombre.plot <- paste0('PET_mensual', '.png')
 png(nombre.plot, width = 1080, height = 720, units = "px")
 
 ggplot(pet.mensual.con.pendiente, aes(x=anho, y=valor) ) +
@@ -686,7 +847,7 @@ ggplot(pet.mensual.con.pendiente, aes(x=anho, y=valor) ) +
     inherit.aes=FALSE
   ) +
   
-  scale_x_continuous(limits = c(1982, 2019), breaks=seq(1982, 2018, by=2)) +
+  scale_x_continuous(limits = c(1980, 2017), breaks=seq(1980, 2017, by=2)) +
   facet_wrap(~nombre.mes, ncol = 3) +
   theme_bw() +
   theme(text = element_text(size=14), panel.spacing = unit(1, "lines"),
@@ -699,50 +860,14 @@ dev.off()
 
 
 
-# PET invierno/verano ----
+# PET estaciones ----
 
 head(pet.mensual)
-str(pet.mensual)
-
-meses.de.invierno <- c(1, 5:10)
-meses.de.verano <- c(1, 11:13, 2:4)
-
-
-# Invierno
-
-pet.invierno <- pet.mensual[,meses.de.invierno]
-colnames(pet.invierno)[1] <- 'anho'
-head(pet.invierno)
-
-pet.invierno$valor.promedio <- rowMeans(pet.invierno[,2:ncol(pet.invierno)])
-
-pet.invierno.sd <- c()
-for (i in 1:nrow(pet.invierno)) {
-  pet.invierno.sd0 <- sd(pet.invierno[i, 2:(ncol(pet.invierno)-1)])  
-  pet.invierno.sd <- c(pet.invierno.sd, pet.invierno.sd0)
-}
-
-pet.invierno$sd <- pet.invierno.sd
-head(pet.invierno)
-
-pet.ts <- ts(pet.invierno$valor.promedio, start = pet.invierno$anho[1], freq = 1)
-
-slope <- sens.slope(pet.ts,) ; slope
-valor.pendiente <- round(slope$estimates, 3)
-valor.p.value <- round(slope$p.value, 3)
-
-pet.invierno$leyenda.valor.pendiente <- paste0(
-  'Pendiente = ', valor.pendiente, ' (', 'p-value = ', valor.p.value, ')')
-
-pet.invierno$estacion <- 'Invierno'
-
-pet.invierno.depurado <- pet.invierno[,c('anho', 'estacion', 'valor.promedio', 'sd', 'leyenda.valor.pendiente')]
-head(pet.invierno.depurado)
 
 
 # Verano
 
-pet.verano <- pet.mensual[,meses.de.verano]
+pet.verano <- pet.mensual[,c(1, meses.de.verano+1)]
 colnames(pet.verano)[1] <- 'anho'
 head(pet.verano)
 
@@ -772,13 +897,115 @@ pet.verano.depurado <- pet.verano[,c('anho', 'estacion', 'valor.promedio', 'sd',
 head(pet.verano.depurado)
 
 
+# Otonho
+
+pet.otonho <- pet.mensual[,c(1, meses.de.otonho+1)]
+colnames(pet.otonho)[1] <- 'anho'
+head(pet.otonho)
+
+pet.otonho$valor.promedio <- rowMeans(pet.otonho[,2:ncol(pet.otonho)])
+
+pet.otonho.sd <- c()
+for (i in 1:nrow(pet.otonho)) {
+  pet.otonho.sd0 <- sd(pet.otonho[i, 2:(ncol(pet.otonho)-1)])  
+  pet.otonho.sd <- c(pet.otonho.sd, pet.otonho.sd0)
+}
+
+pet.otonho$sd <- pet.otonho.sd
+head(pet.otonho)
+
+pet.ts <- ts(pet.otonho$valor.promedio, start = pet.otonho$anho[1], freq = 1)
+
+slope <- sens.slope(pet.ts,) ; slope
+valor.pendiente <- round(slope$estimates, 3)
+valor.p.value <- round(slope$p.value, 3)
+
+pet.otonho$leyenda.valor.pendiente <- paste0(
+  'Pendiente = ', valor.pendiente, ' (', 'p-value = ', valor.p.value, ')')
+
+pet.otonho$estacion <- 'Otono'
+
+pet.otonho.depurado <- pet.otonho[,c('anho', 'estacion', 'valor.promedio', 'sd', 'leyenda.valor.pendiente')]
+head(pet.otonho.depurado)
+
+
+# Invierno
+
+pet.invierno <- pet.mensual[,c(1, meses.de.invierno+1)]
+colnames(pet.invierno)[1] <- 'anho'
+head(pet.invierno)
+
+pet.invierno$valor.promedio <- rowMeans(pet.invierno[,2:ncol(pet.invierno)])
+
+pet.invierno.sd <- c()
+for (i in 1:nrow(pet.invierno)) {
+  pet.invierno.sd0 <- sd(pet.invierno[i, 2:(ncol(pet.invierno)-1)])  
+  pet.invierno.sd <- c(pet.invierno.sd, pet.invierno.sd0)
+}
+
+pet.invierno$sd <- pet.invierno.sd
+head(pet.invierno)
+
+pet.ts <- ts(pet.invierno$valor.promedio, start = pet.invierno$anho[1], freq = 1)
+
+slope <- sens.slope(pet.ts,) ; slope
+valor.pendiente <- round(slope$estimates, 3)
+valor.p.value <- round(slope$p.value, 3)
+
+pet.invierno$leyenda.valor.pendiente <- paste0(
+  'Pendiente = ', valor.pendiente, ' (', 'p-value = ', valor.p.value, ')')
+
+pet.invierno$estacion <- 'Invierno'
+
+pet.invierno.depurado <- pet.invierno[,c('anho', 'estacion', 'valor.promedio', 'sd', 'leyenda.valor.pendiente')]
+head(pet.invierno.depurado)
+
+
+# Primavera
+
+pet.primavera <- pet.mensual[,c(1, meses.de.primavera+1)]
+colnames(pet.primavera)[1] <- 'anho'
+head(pet.primavera)
+
+pet.primavera$valor.promedio <- rowMeans(pet.primavera[,2:ncol(pet.primavera)])
+
+pet.primavera.sd <- c()
+for (i in 1:nrow(pet.primavera)) {
+  pet.primavera.sd0 <- sd(pet.primavera[i, 2:(ncol(pet.primavera)-1)])  
+  pet.primavera.sd <- c(pet.primavera.sd, pet.primavera.sd0)
+}
+
+pet.primavera$sd <- pet.primavera.sd
+head(pet.primavera)
+
+pet.ts <- ts(pet.primavera$valor.promedio, start = pet.primavera$anho[1], freq = 1)
+
+slope <- sens.slope(pet.ts,) ; slope
+valor.pendiente <- round(slope$estimates, 3)
+valor.p.value <- round(slope$p.value, 3)
+
+pet.primavera$leyenda.valor.pendiente <- paste0(
+  'Pendiente = ', valor.pendiente, ' (', 'p-value = ', valor.p.value, ')')
+
+pet.primavera$estacion <- 'Primavera'
+
+pet.primavera.depurado <- pet.primavera[,c('anho', 'estacion', 'valor.promedio', 'sd', 'leyenda.valor.pendiente')]
+head(pet.primavera.depurado)
+
+
 # Union de db's
 
-db.pet.estaciones <- rbind(pet.invierno.depurado, pet.verano.depurado)
+db.pet.estaciones <- rbind(pet.verano.depurado, pet.otonho.depurado, 
+                           pet.invierno.depurado, pet.primavera.depurado)
+
+db.pet.estaciones$estacion <- factor(db.pet.estaciones$estacion, levels = c('Verano', 'Otono', 'Invierno', 'Primavera'))
+
 head(db.pet.estaciones)
 
-dim(pet.invierno.depurado)
 dim(pet.verano.depurado)
+dim(pet.otonho.depurado)
+dim(pet.invierno.depurado)
+dim(pet.primavera.depurado)
 dim(db.pet.estaciones)
 
 
@@ -786,17 +1013,17 @@ dim(db.pet.estaciones)
 
 setwd(carpeta.de.plots)
 
-nombre.plot <- paste0('PET_invierno_verano', '_pixel_', numero.de.pixel, '.png')
+nombre.plot <- paste0('PET_estaciones','.png')
 png(nombre.plot, width = 750, height = 580, units = "px", type = 'cairo')
 
 ggplot(db.pet.estaciones, aes(x=anho, y=valor.promedio)) +
   geom_point(size=1.5) +
   geom_line() +
   
-  geom_errorbar(aes(ymin=valor.promedio-sd, ymax=valor.promedio+sd), width=0.3, size=1,
+  geom_errorbar(aes(ymin=valor.promedio-sd, ymax=valor.promedio+sd), width=0.5, size=0.5,
                 position=position_dodge2(0.05)) +
   
-  labs(x = '', y = 'SPI') +
+  labs(x = '', y = 'Evapotranspiración Potencial (mm)') +
   geom_smooth(method = lm, # Recta de regresión
               se = FALSE, col = 'red') + # Oculta intervalo de confianza
   geom_text(
@@ -808,8 +1035,8 @@ ggplot(db.pet.estaciones, aes(x=anho, y=valor.promedio)) +
     inherit.aes=FALSE
   ) +
   
-  scale_x_continuous(limits = c(1982, 2018), breaks=seq(1982, 2018, by=2)) +
-  facet_wrap(~estacion, ncol = 1) +
+  scale_x_continuous(limits = c(1980, 2017), breaks=seq(1980, 2017, by=2)) +
+  facet_wrap(~estacion, ncol = 2) +
   theme_bw() +
   theme(text = element_text(size=14), panel.spacing = unit(1, "lines"),
         axis.text.x = element_text(angle = 45, hjust = 1))
@@ -829,7 +1056,7 @@ setwd(carpeta.de.archivos)
 # Lectura de datos
 
 nombre.archivo.parte.1 <- 'SDI_'
-nombre.archivo <- paste0(nombre.archivo.parte.1, comuna, nombre.archivo.parte.2, numero.de.pixel, nombre.archivo.parte.3)
+nombre.archivo <- list.files(pattern = nombre.archivo.parte.1)
 
 db.sdi0 <- read.xlsx(nombre.archivo, 1)
 head(db.sdi0)
@@ -888,7 +1115,7 @@ for (i in 1:12) {
   
   id.valores.sin.NA <- which(!is.na(db.sdi.i$valor))
   valor <- db.sdi.i$valor[id.valores.sin.NA]
-  sdi.ts.i <- ts(valor, start = 1982, freq = 1)
+  sdi.ts.i <- ts(valor, start = 1980, freq = 1)
   
   slope.i <- sens.slope(sdi.ts.i,) ; slope.i
   valor.pendiente <- round(slope.i$estimates, 3)
@@ -914,7 +1141,7 @@ colores <- c('#87CB2F', '#F8F402', '#FFD100', '#FF8000', '#FC1402')
 
 setwd(carpeta.de.plots)
 
-nombre.plot <- paste0('SDI_mensual', '_pixel_', numero.de.pixel, '.png')
+nombre.plot <- paste0('SDI_mensual', '.png')
 png(nombre.plot, width = 1080, height = 720, units = "px")
 
 ggplot(db.sdi.con.pendiente, aes(x=anho, y=valor) ) +
@@ -933,8 +1160,8 @@ ggplot(db.sdi.con.pendiente, aes(x=anho, y=valor) ) +
     inherit.aes=FALSE
   ) +
   
-  scale_y_continuous(limits = c(-4, 4), breaks=seq(-4, 4, by=1)) +
-  scale_x_continuous(limits = c(1982, 2018), breaks=seq(1982, 2018, by=2)) +
+  scale_y_continuous(limits = c(-5, 5), breaks=seq(-5, 5, by=1)) +
+  scale_x_continuous(limits = c(1980, 2017), breaks=seq(1980, 2017, by=2)) +
   geom_hline(yintercept=intercepto, linetype="dashed", color = 'black') +
   facet_wrap(~nombre.mes, ncol = 3) +
   theme_bw() +
@@ -948,12 +1175,88 @@ dev.off()
 
 
 
-# SDI invierno/verano ----
+# SDI estaciones ----
 
 head(db.sdi)
 
-meses.de.invierno <- c(4:9)
-meses.de.verano <- c(10:12, 1:3)
+meses.de.verano <- 1:3
+meses.de.otonho <- 4:6
+meses.de.invierno <- 7:9
+meses.de.primavera <- 10:12
+
+
+# Verano
+
+id.verano <- which(db.sdi$mes%in%meses.de.verano)
+db.sdi.verano <- db.sdi[id.verano,]
+anhos.unicos.verano <- unique(db.sdi.verano$anho)
+
+db.sdi.verano.con.pendiente <- c()
+for (i in 1:length(anhos.unicos.verano)) {
+  # i <- 1
+  
+  anho.i <- anhos.unicos.verano[i]
+  db.sdi.i <- subset(db.sdi.verano, anho==anho.i)
+  
+  valor.promedio <- mean(db.sdi.i$valor)
+  sd <- sd(db.sdi.i$valor)
+  
+  db.sdi.mean.i <- data.frame(anho=anho.i, valor=valor.promedio, sd=sd)
+  
+  db.sdi.verano.con.pendiente <- rbind(db.sdi.verano.con.pendiente, db.sdi.mean.i)
+}
+
+id.valores.sin.NA <- which(!is.na(db.sdi.verano.con.pendiente$valor))
+db.sdi.verano.con.pendiente <- db.sdi.verano.con.pendiente[id.valores.sin.NA,]
+
+sdi.ts.i <- ts(db.sdi.verano.con.pendiente$valor, start = anhos.unicos.verano[1], freq = 1)
+
+slope.i <- sens.slope(sdi.ts.i,) ; slope.i
+valor.pendiente <- round(slope.i$estimates, 3)
+valor.p.value <- round(slope.i$p.value, 3)
+
+db.sdi.verano.con.pendiente$leyenda.valor.pendiente <- paste0(
+  'Pendiente = ', valor.pendiente, ' (', 'p-value = ', valor.p.value, ')')
+
+db.sdi.verano.con.pendiente$estacion <- 'Verano'
+db.sdi.verano.con.pendiente
+
+
+# Otonho
+
+id.otonho <- which(db.sdi$mes%in%meses.de.otonho)
+db.sdi.otonho <- db.sdi[id.otonho,]
+anhos.unicos.otonho <- unique(db.sdi.otonho$anho)
+
+db.sdi.otonho.con.pendiente <- c()
+for (i in 1:length(anhos.unicos.otonho)) {
+  # i <- 1
+  
+  anho.i <- anhos.unicos.otonho[i]
+  db.sdi.i <- subset(db.sdi.otonho, anho==anho.i)
+  
+  valor.promedio <- mean(db.sdi.i$valor)
+  sd <- sd(db.sdi.i$valor)
+  
+  db.sdi.mean.i <- data.frame(anho=anho.i, valor=valor.promedio, sd=sd)
+  
+  db.sdi.otonho.con.pendiente <- rbind(db.sdi.otonho.con.pendiente, db.sdi.mean.i)
+}
+
+id.valores.sin.NA <- which(!is.na(db.sdi.otonho.con.pendiente$valor))
+db.sdi.otonho.con.pendiente <- db.sdi.otonho.con.pendiente[id.valores.sin.NA,]
+
+sdi.ts.i <- ts(db.sdi.otonho.con.pendiente$valor, start = anhos.unicos.otonho[1], freq = 1)
+
+slope.i <- sens.slope(sdi.ts.i,) ; slope.i
+valor.pendiente <- round(slope.i$estimates, 3)
+valor.p.value <- round(slope.i$p.value, 3)
+
+db.sdi.otonho.con.pendiente$leyenda.valor.pendiente <- paste0(
+  'Pendiente = ', valor.pendiente, ' (', 'p-value = ', valor.p.value, ')')
+
+db.sdi.otonho.con.pendiente$estacion <- 'Otono'
+db.sdi.otonho.con.pendiente
 
 
 # Invierno
@@ -993,50 +1296,53 @@ db.sdi.invierno.con.pendiente$estacion <- 'Invierno'
 db.sdi.invierno.con.pendiente
 
 
-# Verano
+# Primavera
 
-id.verano <- which(db.sdi$mes%in%meses.de.verano)
-db.sdi.verano <- db.sdi[id.verano,]
-anhos.unicos.verano <- unique(db.sdi.verano$anho)
+id.primavera <- which(db.sdi$mes%in%meses.de.primavera)
+db.sdi.primavera <- db.sdi[id.primavera,]
+anhos.unicos.primavera <- unique(db.sdi.primavera$anho)
 
-db.sdi.verano.con.pendiente <- c()
-for (i in 1:length(anhos.unicos.verano)) {
+db.sdi.primavera.con.pendiente <- c()
+for (i in 1:length(anhos.unicos.primavera)) {
   # i <- 1
   
-  anho.i <- anhos.unicos.verano[i]
-  db.sdi.i <- subset(db.sdi.verano, anho==anho.i)
+  anho.i <- anhos.unicos.primavera[i]
+  db.sdi.i <- subset(db.sdi.primavera, anho==anho.i)
   
   valor.promedio <- mean(db.sdi.i$valor)
   sd <- sd(db.sdi.i$valor)
   
   db.sdi.mean.i <- data.frame(anho=anho.i, valor=valor.promedio, sd=sd)
   
-  db.sdi.verano.con.pendiente <- rbind(db.sdi.verano.con.pendiente, db.sdi.mean.i)
+  db.sdi.primavera.con.pendiente <- rbind(db.sdi.primavera.con.pendiente, db.sdi.mean.i)
 }
 
-id.valores.sin.NA <- which(!is.na(db.sdi.verano.con.pendiente$valor))
-db.sdi.verano.con.pendiente <- db.sdi.verano.con.pendiente[id.valores.sin.NA,]
+id.valores.sin.NA <- which(!is.na(db.sdi.primavera.con.pendiente$valor))
+db.sdi.primavera.con.pendiente <- db.sdi.primavera.con.pendiente[id.valores.sin.NA,]
 
-sdi.ts.i <- ts(db.sdi.verano.con.pendiente$valor, start = anhos.unicos.verano[1], freq = 1)
+sdi.ts.i <- ts(db.sdi.primavera.con.pendiente$valor, start = anhos.unicos.primavera[1], freq = 1)
 
 slope.i <- sens.slope(sdi.ts.i,) ; slope.i
 valor.pendiente <- round(slope.i$estimates, 3)
 valor.p.value <- round(slope.i$p.value, 3)
 
-db.sdi.verano.con.pendiente$leyenda.valor.pendiente <- paste0(
+db.sdi.primavera.con.pendiente$leyenda.valor.pendiente <- paste0(
   'Pendiente = ', valor.pendiente, ' (', 'p-value = ', valor.p.value, ')')
 
-db.sdi.verano.con.pendiente$estacion <- 'verano'
-db.sdi.verano.con.pendiente
+db.sdi.primavera.con.pendiente$estacion <- 'Primavera'
+db.sdi.primavera.con.pendiente
 
 
 # Union de db's
 
-db.sdi.estaciones <- rbind(db.sdi.invierno.con.pendiente, db.sdi.verano.con.pendiente)
+db.sdi.estaciones <- rbind(db.sdi.verano.con.pendiente, db.sdi.otonho.con.pendiente,
+                           db.sdi.invierno.con.pendiente, db.sdi.primavera.con.pendiente)
 head(db.sdi.estaciones)
 
-dim(db.sdi.invierno.con.pendiente)
 dim(db.sdi.verano.con.pendiente)
+dim(db.sdi.otonho.con.pendiente)
+dim(db.sdi.invierno.con.pendiente)
+dim(db.sdi.primavera.con.pendiente)
 dim(db.sdi.estaciones)
 
 db.sdi.estaciones$clasificacion <- NA
@@ -1053,24 +1359,23 @@ db.sdi.estaciones$clasificacion[db.sdi.estaciones$valor < -2] <- 'Sequía extrem
 db.sdi.estaciones$color[db.sdi.estaciones$valor < -2] <- '#FC1402'
 
 db.sdi.estaciones$clasificacion <- factor(db.sdi.estaciones$clasificacion, levels = niveles)
+db.sdi.estaciones$estacion <- factor(db.sdi.estaciones$estacion, levels = c('Verano', 'Otono', 'Invierno', 'Primavera'))
 db.sdi.estaciones <- db.sdi.estaciones[order(db.sdi.estaciones$clasificacion),]
 
 # Plot
 
 setwd(carpeta.de.plots)
 
-nombre.plot <- paste0('SDI_invierno_verano', '_pixel_', numero.de.pixel, '.png')
+nombre.plot <- paste0('SDI_estaciones', '.png')
 png(nombre.plot, width = 750, height = 580, units = "px", type = 'cairo')
 
 ggplot(db.sdi.estaciones, aes(x=anho, y=valor)) +
-  geom_point(aes(colour=clasificacion), size=3) +
   scale_color_manual(values = unique(db.sdi.estaciones$color), 
                      name='Clasificación', aesthetics = "colour") +
   geom_line() +
-  
-  geom_errorbar(aes(ymin=valor-sd, ymax=valor+sd, colour=clasificacion), width=0.6, size=1,
+  geom_errorbar(aes(ymin=valor-sd, ymax=valor+sd), width=0.5, size=0.5,
                 position=position_dodge2(0.05)) +
-  
+  geom_point(aes(colour=clasificacion), size=3) +
   labs(x = '', y = 'SDI') +
   geom_smooth(method = lm, # Recta de regresión
               se = FALSE, col = 'red') + # Oculta intervalo de confianza
@@ -1083,10 +1388,10 @@ ggplot(db.sdi.estaciones, aes(x=anho, y=valor)) +
     inherit.aes=FALSE
   ) +
   
-  scale_y_continuous(limits = c(-4, 4), breaks=seq(-4, 4, by=1)) +
-  scale_x_continuous(limits = c(1982, 2018), breaks=seq(1982, 2018, by=2)) +
+  scale_y_continuous(limits = c(-5, 4), breaks=seq(-5, 4, by=1)) +
+  scale_x_continuous(limits = c(1980, 2017), breaks=seq(1980, 2017, by=2)) +
   geom_hline(yintercept=intercepto, linetype="dashed", color = 'black') +
-  facet_wrap(~estacion, ncol = 1) +
+  facet_wrap(~estacion, ncol = 2) +
   theme_bw() +
   theme(text = element_text(size=14), panel.spacing = unit(1, "lines"),
         axis.text.x = element_text(angle = 45, hjust = 1))
