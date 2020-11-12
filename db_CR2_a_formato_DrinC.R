@@ -4,15 +4,15 @@ dev.off()
 
 # Lectura de datos ----
 
-variable <- 't2m' # 'tmin', 'tmax', 't2m', 'pr'
-comuna <- 'Imperial'
+variable <- 'pr' # 't2m', 'pr'
+comuna <- 'Puren' # 'Teodoro_Schmidt' # 'Padre_Las_Casas' # 'Imperial'
 directorio.principal <- 'C:/Users/Usuario/Documents/Francisco/proyecto_agua/CR2/base_de_datos/'
 
-# setwd(paste0(directorio.principal, comuna, '/', 'precipitacion/'))
-# db <- read.csv(list.files(pattern = 'pr')[2])
+setwd(paste0(directorio.principal, comuna, '/', 'precipitacion/'))
+db <- read.csv(list.files(pattern = 'pr')[2])
 
-setwd(paste0(directorio.principal, comuna, '/', 'temperatura_media/'))
-db <- read.csv(list.files(pattern = variable)[2])
+# setwd(paste0(directorio.principal, comuna, '/', 'temperatura_media/'))
+# db <- read.csv(list.files(pattern = variable)[2])
 
 # setwd(paste0(directorio.principal, comuna, '/', 'temperatura_maxima/'))
 # db <- read.csv(list.files(pattern = 'tmax')[2])
@@ -25,7 +25,6 @@ db <- read.csv(list.files(pattern = variable)[2])
 
 # Conservando anhos completos 
 
-# nombres.como.fechas <- nombre_de_columnas_a_fechas(db.k, eliminar_ultimas_dos_columnas = TRUE)
 nombres.como.fechas <- as.Date(db$fecha) 
 anhos <- year(nombres.como.fechas)
 anhos.unicos <- unique(year(nombres.como.fechas))
@@ -96,7 +95,7 @@ for (j in 2:length(anhos.unicos.2)) {
       )} else(c(
         
         mes.j <- names(tapply(db.anho.j.2$valor, db.anho.j.2$nombre.mes, sum)),
-        valores.j <- names(tapply(db.anho.j.2$valor, db.anho.j.2$nombre.mes, sum))
+        valores.j <- as.numeric(tapply(db.anho.j.2$valor, db.anho.j.2$nombre.mes, sum))
         
         ))
     
@@ -130,4 +129,5 @@ for (j in 2:length(anhos.unicos.2)) {
   
   write.xlsx(formato.matriz, file = nombre.archivo.de.salida,
              sheetName = variable, row.names = FALSE)
+  
   

@@ -3,7 +3,6 @@ library(lubridate)
 library(ggplot2)
 library(trend)
 
-citation()
 
 rm(list=ls())
 dev.off()
@@ -15,7 +14,7 @@ source('funcion_calculo_de_pendiente_indices_climaticos_por_estacion.R')
 
 # Lectura de datos ----
 
-comuna <- 'Imperial'
+comuna <- 'Puren' # 'Teodoro_Schmidt' # 'Padre_Las_Casas' # 'Imperial'
 directorio.principal <- 'C:/Users/Usuario/Documents/Francisco/proyecto_agua/CR2/base_de_datos/'
 
 setwd(paste0(directorio.principal, comuna, '/', 'precipitacion/'))

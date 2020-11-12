@@ -13,7 +13,7 @@ dev.off()
 # Definiendo direcciones de carpetas ---- 
 
 # numero.de.pixel <- 1
-comuna <- 'Imperial'
+comuna <- 'Puren' # 'Teodoro_Schmidt' # 'Padre_Las_Casas' # 'Imperial'
 directorio.principal <- 'C:/Users/Usuario/Documents/Francisco/proyecto_agua/CR2/base_de_datos/'
 # carpeta.de.archivos <- paste0(directorio.principal, comuna, '/', 'pixel_', numero.de.pixel, '/')
 # carpeta.de.plots <- paste0(carpeta.de.archivos, 'plots/')

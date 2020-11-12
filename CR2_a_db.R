@@ -15,11 +15,11 @@ dev.off()
 
 setwd('C:/Users/Usuario/Documents/Francisco/proyecto_agua/CR2/')
 
-variable <- 't2m' # 't2m', 'pr', 'tmin', 'tmax
+variable <- 'tmax' # 't2m', 'pr', 'tmin', 'tmax
 # nombre.archivo <- 'CR2MET_pr_v2.0_day_1979_2018_005deg.nc' # (pr)
-nombre.archivo <- 'CR2MET_t2m_v2.0_day_1979_2018_005deg.nc' # (t2m)
+# nombre.archivo <- 'CR2MET_t2m_v2.0_day_1979_2018_005deg.nc' # (t2m)
 # nombre.archivo <- 'CR2MET_tmin_v2.0_day_1979_2018_005deg.nc' # (tmin)
-# nombre.archivo <- 'CR2MET_tmax_v2.0_day_1979_2020_005deg.nc' # (tmax)
+nombre.archivo <- 'CR2MET_tmax_v2.0_day_1979_2020_005deg.nc' # (tmax)
 
 cr2 <- stack(nombre.archivo, varname=variable)
 cr2
@@ -33,11 +33,11 @@ plot(cr2, 1)
 
 # Lectura capa de cuenca ----
 
-nombre.comuna <- 'Imperial' # 'Padre_Las_Casas' # 'Imperial' # 'Teodoro_Schmidt' # puren
+nombre.comuna <- 'Puren' # 'Padre_Las_Casas' # 'Imperial' # 'Teodoro_Schmidt' # 'Puren'
 setwd('C:/Users/Usuario/Documents/Francisco/proyecto_agua/coberturas_FFMC/') # 'Imperial' # 'Teodoro_Schmidt' # puren
 # setwd('C:/Users/Usuario/Documents/Francisco/proyecto_agua/') # 'Padre_Las_Casas'
 
-nombre.archivo.cuenca.puren <- 'poligono_cuenca_Estero_Poleco_utm18s'
+nombre.archivo.cuenca.puren <- 'poligono_cuenca_Rio_Puren_utm18s'
 cuenca <- readOGR('.', nombre.archivo.cuenca.puren)
 cuenca.wgs84 <- spTransform(cuenca, crs(cr2)) 
 
@@ -63,8 +63,8 @@ plot(cuenca.wgs84, border='red', add=TRUE)
 
 setwd('C:/Users/Usuario/Documents/Francisco/proyecto_agua/CR2/')
 
-latitud <-  c(-38.69, -38.55) # c(-38.94, -38.75) # Padre Las Casas; c(-38.69, -38.55) # Imperial; c(-39.05, -38.85) # Teodoro Schmidt #; c(-38.1, -38) # puren
-longitud <-  c(-73.04, -72.9) # c(-72.64, -72.45) # Padre Las Casas; c(-73.04, -72.9) # Imperial; c(-73.05, -72.86) # Teodoro Schmidt #; c(-73.14, -72.95) # puren
+latitud <- c(-38.1, -38) # c(-38.89, -38.75) # Padre Las Casas; c(-38.69, -38.55) # Imperial; c(-38.99, -38.85) # Teodoro Schmidt #; c(-38.1, -38) # puren
+longitud <- c(-73.09, -72.95) # c(-72.64, -72.45) # Padre Las Casas; c(-73.04, -72.9) # Imperial; c(-73, -72.86) # Teodoro Schmidt #; c(-73.14, -72.95) # puren
 
 # C4R.vocabulary()
 er5.datos.mensuales <- loadGridData(dataset = nombre.archivo, 

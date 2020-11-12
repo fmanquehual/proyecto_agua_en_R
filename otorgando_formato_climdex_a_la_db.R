@@ -12,26 +12,28 @@ source('funcion_nombre_de_columnas_a_fechas.R')
 
 # Lectura de datos ----
 
-setwd('C:/Users/Usuario/Documents/Francisco/proyecto_agua/CR2/base_de_datos/Imperial/precipitacion/')
+setwd('C:/Users/Usuario/Documents/Francisco/proyecto_agua/CR2/base_de_datos/Puren/temperatura_minima/')
 
-variable <- 'pr'
-nombre.archivo <- 'pr_Imperial_cr2_depurado.csv'
-pr <- read.csv(nombre.archivo)
-head(pr)
-dim(pr)
+variable <- 'tmin' # 'tmin' # 'tmax' # 't2m' # 'pr'
+nombre.archivo <- 'tmin_Puren_cr2_bruto.csv'
+db <- read.csv(nombre.archivo)
+# head(db)
+dim(db)
 
 # fin ---
 
 
 
 
-for (k in 1:nrow(db.completo)) {
-  # k <- 1  
+# Preparando db ----
+
+for (k in 1:nrow(db)) {
+  # k <- 1
   
   # Filtro por pixel (fila)
   
   formato.matriz <- c()
-  db.k <- db.completo[k,]
+  db.k <- db[k,]
   
   
   # Conservando anhos completos 
