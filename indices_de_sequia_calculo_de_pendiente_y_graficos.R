@@ -1364,6 +1364,8 @@ db.sdi.estaciones <- db.sdi.estaciones[order(db.sdi.estaciones$clasificacion),]
 
 # Plot
 
+intercepto <- c(0, -1, -1.51, -2)
+
 setwd(carpeta.de.plots)
 
 nombre.plot <- paste0('SDI_estaciones', '.png')

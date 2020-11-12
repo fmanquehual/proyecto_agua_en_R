@@ -3,6 +3,8 @@ library(lubridate)
 library(ggplot2)
 library(trend)
 
+citation()
+
 rm(list=ls())
 dev.off()
 
@@ -51,9 +53,9 @@ ci <- climdexInput.raw(tmax=tmax$valor,
 
 fd <- climdex.fd(ci) ; length(fd) # 40 (1979:2018 = 40)
 su <- climdex.su(ci) ; length(su) # 40
-id <- climdex.id(ci) ; length(id) # 40
-tr <- climdex.tr(ci) ; length(tr) # 40
-gsl <- climdex.gsl(ci) ; length(gsl) # 40
+# id <- climdex.id(ci) ; length(id) # 40 # No lo usa la DMC y da resultados nulos
+# tr <- climdex.tr(ci) ; length(tr) # 40 # No lo usa la DMC y da resultados nulos
+# gsl <- climdex.gsl(ci) ; length(gsl) # 40 # No lo usa la DMC y da resultados nulos
 txx <- climdex.txx(ci) ; length(txx) # 480 ((1979:2018)*12 = 480)
 tnx <- climdex.tnx(ci) ; length(tnx) # 480
 txn <- climdex.txn(ci) ; length(txn) # 480
@@ -70,7 +72,7 @@ rx5day <- climdex.rx5day(ci) ; length(rx5day) # 480
 sdii <- climdex.sdii(ci) ; length(sdii) # 40
 r10mm <- climdex.r10mm(ci) ; length(r10mm) # 40
 r20mm <- climdex.r20mm(ci) ; length(r20mm) # 40
-rnnmm <- climdex.rnnmm(ci) ; length(rnnmm) # 40
+# rnnmm <- climdex.rnnmm(ci) ; length(rnnmm) # 40  # No lo usa la DMC
 cdd <- climdex.cdd(ci) ; length(cdd) # 40
 cwd <- climdex.cwd(ci) ; length(cwd) # 40
 r95ptot <- climdex.r95ptot(ci) ; length(r95ptot) # 40
@@ -90,14 +92,14 @@ db.fd$leyenda.valor.pendiente <- calculo_de_pendiente_indices_climaticos(db.fd, 
 db.su <- data.frame(fecha=names(su), indice='su', valor=su)
 db.su$leyenda.valor.pendiente <- calculo_de_pendiente_indices_climaticos(db.su, anho_inicial = 1979)
 
-db.id <- data.frame(fecha=names(id), indice='id', valor=id)
-db.id$leyenda.valor.pendiente <- calculo_de_pendiente_indices_climaticos(db.id, anho_inicial = 1979)
+# db.id <- data.frame(fecha=names(id), indice='id', valor=id)
+# db.id$leyenda.valor.pendiente <- calculo_de_pendiente_indices_climaticos(db.id, anho_inicial = 1979)
 
-db.tr <- data.frame(fecha=names(tr), indice='tr', valor=tr)
-db.tr$leyenda.valor.pendiente <- calculo_de_pendiente_indices_climaticos(db.tr, anho_inicial = 1979)
+# db.tr <- data.frame(fecha=names(tr), indice='tr', valor=tr)
+# db.tr$leyenda.valor.pendiente <- calculo_de_pendiente_indices_climaticos(db.tr, anho_inicial = 1979)
 
-db.gsl <- data.frame(fecha=names(gsl), indice='gsl', valor=gsl)
-db.gsl$leyenda.valor.pendiente <- calculo_de_pendiente_indices_climaticos(db.gsl, anho_inicial = 1979)
+# db.gsl <- data.frame(fecha=names(gsl), indice='gsl', valor=gsl)
+# db.gsl$leyenda.valor.pendiente <- calculo_de_pendiente_indices_climaticos(db.gsl, anho_inicial = 1979)
 
 db.wsdi <- data.frame(fecha=names(wsdi), indice='wsdi', valor=wsdi)
 db.wsdi$leyenda.valor.pendiente <- calculo_de_pendiente_indices_climaticos(db.wsdi, anho_inicial = 1979)
@@ -114,8 +116,8 @@ db.r10mm$leyenda.valor.pendiente <- calculo_de_pendiente_indices_climaticos(db.r
 db.r20mm <- data.frame(fecha=names(r20mm), indice='r20mm', valor=r20mm)
 db.r20mm$leyenda.valor.pendiente <- calculo_de_pendiente_indices_climaticos(db.r20mm, anho_inicial = 1979)
 
-db.rnnmm <- data.frame(fecha=names(rnnmm), indice='rnnmm', valor=rnnmm)
-db.rnnmm$leyenda.valor.pendiente <- calculo_de_pendiente_indices_climaticos(db.rnnmm, anho_inicial = 1979)
+# db.rnnmm <- data.frame(fecha=names(rnnmm), indice='rnnmm', valor=rnnmm)
+# db.rnnmm$leyenda.valor.pendiente <- calculo_de_pendiente_indices_climaticos(db.rnnmm, anho_inicial = 1979)
 
 db.cdd <- data.frame(fecha=names(cdd), indice='cdd', valor=cdd)
 db.cdd$leyenda.valor.pendiente <- calculo_de_pendiente_indices_climaticos(db.cdd, anho_inicial = 1979)
@@ -132,8 +134,8 @@ db.r99ptot$leyenda.valor.pendiente <- calculo_de_pendiente_indices_climaticos(db
 db.prcptot <- data.frame(fecha=names(prcptot), indice='prcptot', valor=prcptot)
 db.prcptot$leyenda.valor.pendiente <- calculo_de_pendiente_indices_climaticos(db.prcptot, anho_inicial = 1979)
 
-db.indices.anuales <- rbind(db.fd, db.su, db.id, db.tr, db.gsl, db.wsdi, db.csdi, 
-                            db.sdii, db.r10mm, db.r20mm, db.rnnmm, db.cdd, db.cwd,
+db.indices.anuales <- rbind(db.fd, db.su, db.wsdi, db.csdi, # db.id, db.tr, db.gsl, 
+                            db.sdii, db.r10mm, db.r20mm, db.cdd, db.cwd, # db.rnnmm, 
                             db.r95ptot, db.r99ptot, db.prcptot)
 
 db.indices.anuales$fecha <- as.numeric(db.indices.anuales$fecha)
@@ -240,17 +242,16 @@ nombre.plot <- paste0('indices_climaticos_anuales_', comuna, '.png') ; nombre.pl
 png(nombre.plot, width = 850, height = 650, units = "px", type = 'cairo')
 
 ggplot(db.indices.anuales, aes(x=fecha, y=valor) ) +
-  # geom_point() +
   geom_line() +
   labs(x = '', y = 'Valor') +
   geom_smooth(method = lm, # Recta de regresión
               se = FALSE, col = 'red') + # Oculta intervalo de confianza
   geom_text(
     data    = db.indices.anuales,
-    mapping = aes(x = Inf, y = -Inf, label = leyenda.valor.pendiente), # x = -Inf, y = -Inf
+    mapping = aes(x = -Inf, y = -Inf, label = leyenda.valor.pendiente), # x = -Inf, y = -Inf
     check_overlap = TRUE,
-    hjust   = 1.05, # -0.1
-    vjust   = -7, # -1
+    hjust   = -0.05, # -0.1
+    vjust   = -1, # -1
     inherit.aes=FALSE,
     size=3.9
   ) +

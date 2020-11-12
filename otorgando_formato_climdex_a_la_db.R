@@ -12,13 +12,13 @@ source('funcion_nombre_de_columnas_a_fechas.R')
 
 # Lectura de datos ----
 
-setwd('C:/Users/Usuario/Documents/Francisco/proyecto_agua/CR2/base_de_datos/Imperial/temperatura_media/')
+setwd('C:/Users/Usuario/Documents/Francisco/proyecto_agua/CR2/base_de_datos/Imperial/precipitacion/')
 
-variable <- 't2m'
-nombre.archivo <- 't2m_Imperial_cr2_bruto.csv'
-db.completo <- read.csv(nombre.archivo)
-head(db.completo[,1:4])
-dim(db.completo)
+variable <- 'pr'
+nombre.archivo <- 'pr_Imperial_cr2_depurado.csv'
+pr <- read.csv(nombre.archivo)
+head(pr)
+dim(pr)
 
 # fin ---
 
