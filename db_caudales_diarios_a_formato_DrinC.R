@@ -15,9 +15,9 @@ source('funcion_fechas_del_anho.R')
 setwd('C:/Users/Usuario/Documents/Francisco/proyecto_agua/ERA_LAND/bases_de_datos/')
 
 variable <- 'caudal'
-rango.de.anhos.de.interes <- 1981:2019
+rango.de.anhos.de.interes <- 1979:2018
 
-nombre.archivo <- 'caudal_diario_Rio_Puren_en_Tranaman.csv'
+nombre.archivo <- 'caudal_diario_Rio_Tolten_en_Teodo_Schmidt.csv'
 db <- read.csv(nombre.archivo)
 head(db)
 dim(db)
@@ -173,5 +173,6 @@ for (j in 2:length(anhos.unicos.2)) {
 
 nombre.archivo.de.salida <- gsub('.csv', '_depurado.xlsx', nombre.archivo)
 
-write.xlsx(formato.matriz, file = nombre.archivo.de.salida,
-           sheetName = variable, row.names = FALSE, showNA = FALSE)
+setwd('C:/Users/Usuario/Documents/Francisco/proyecto_agua/CR2/base_de_datos/Teodoro_Schmidt/')
+# write.xlsx(formato.matriz, file = nombre.archivo.de.salida,
+#            sheetName = variable, row.names = FALSE, showNA = FALSE)
